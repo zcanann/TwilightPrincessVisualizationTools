@@ -17,7 +17,7 @@
                 <ResourceDictionary Source="/Twilight;component/View/Styles/Button.xaml" />
                 <ResourceDictionary Source="/Twilight;component/View/Styles/CheckBox.xaml" />
                 <ResourceDictionary Source="/Twilight;component/View/Styles/ComboBox.xaml" />
-                <ResourceDictionary Source="/Twilight;component/View/Styles/ContextMenu.xaml" />
+                <!--<ResourceDictionary Source="/Twilight;component/View/Styles/ContextMenu.xaml" />-->
                 <ResourceDictionary Source="/Twilight;component/View/Styles/GroupBox.xaml" />
                 <ResourceDictionary Source="/Twilight;component/View/Styles/MenuItem.xaml" />
                 <ResourceDictionary Source="/Twilight;component/View/Styles/ScrollViewer.xaml" />

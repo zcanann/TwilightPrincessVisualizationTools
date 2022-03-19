@@ -27,8 +27,8 @@
         <TextBlock Grid.Row="0" Foreground="White">Actor Reference Counts</TextBlock>
         <Image Grid.Row="1" x:Name="heap0Viz" Margin="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Source="{Binding Path=HeapBitmaps[0]}" Stretch="Fill" />
         <DataGrid
+            Name="ActorDataGrid"
             Grid.Row="2"
-            Name="ScanResultsDataGrid"
             behaviors:ScrollToTopBehavior.ScrollToTop="True"
             AutoGenerateColumns="False"
             Background="Transparent"
@@ -40,9 +40,10 @@
             ItemsSource="{Binding Path=ActorReferenceCountSlots}"
             RowHeaderWidth="0"
             SelectionMode="Extended"
+            SelectionUnit="CellOrRowHeader"
             EnableColumnVirtualization="False"
             EnableRowVirtualization="False"
-            SelectionUnit="Cell">
+            >
             <!--  Click and Selection events 
             <intr:Interaction.Triggers>
                 <intr:EventTrigger EventName="SelectionChanged">

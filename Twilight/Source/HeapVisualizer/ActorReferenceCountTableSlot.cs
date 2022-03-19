@@ -71,10 +71,13 @@ namespace Twilight.Source.HeapVisualizer
                 return this.name;
             }
 
-            private set
+            set
             {
-                this.name = value;
-                this.RaisePropertyChanged(nameof(this.Name));
+                if (this.name != value)
+                {
+                    this.name = value;
+                    this.RaisePropertyChanged(nameof(this.Name));
+                }
             }
         }
 
@@ -85,10 +88,13 @@ namespace Twilight.Source.HeapVisualizer
                 return this.referenceCount;
             }
 
-            private set
+            set
             {
-                this.referenceCount = value;
-                this.RaisePropertyChanged(nameof(this.ReferenceCount));
+                if (this.referenceCount != value)
+                {
+                    this.referenceCount = value;
+                    this.RaisePropertyChanged(nameof(this.ReferenceCount));
+                }
             }
         }
 
@@ -99,10 +105,13 @@ namespace Twilight.Source.HeapVisualizer
                 return this.padding;
             }
 
-            private set
+            set
             {
-                this.padding = value;
-                this.RaisePropertyChanged(nameof(this.Padding));
+                if (this.padding != value)
+                {
+                    this.padding = value;
+                    this.RaisePropertyChanged(nameof(this.Padding));
+                }
             }
         }
 
@@ -113,10 +122,13 @@ namespace Twilight.Source.HeapVisualizer
                 return this.mDMCommandPtr;
             }
 
-            private set
+            set
             {
-                this.mDMCommandPtr = value;
-                this.RaisePropertyChanged(nameof(this.MDMCommandPtr));
+                if (this.mDMCommandPtr != value)
+                {
+                    this.mDMCommandPtr = value;
+                    this.RaisePropertyChanged(nameof(this.MDMCommandPtr));
+                }
             }
         }
 
@@ -127,10 +139,13 @@ namespace Twilight.Source.HeapVisualizer
                 return this.mArchivePtr;
             }
 
-            private set
+            set
             {
-                this.mArchivePtr = value;
-                this.RaisePropertyChanged(nameof(this.MArchivePtr));
+                if (this.mArchivePtr != value)
+                {
+                    this.mArchivePtr = value;
+                    this.RaisePropertyChanged(nameof(this.MArchivePtr));
+                }
             }
         }
 
@@ -141,10 +156,13 @@ namespace Twilight.Source.HeapVisualizer
                 return this.heapPtr;
             }
 
-            private set
+            set
             {
-                this.heapPtr = value;
-                this.RaisePropertyChanged(nameof(this.HeapPtr));
+                if (this.heapPtr != value)
+                {
+                    this.heapPtr = value;
+                    this.RaisePropertyChanged(nameof(this.HeapPtr));
+                }
             }
         }
 
@@ -155,10 +173,13 @@ namespace Twilight.Source.HeapVisualizer
                 return this.mDataHeapPtr;
             }
 
-            private set
+            set
             {
-                this.mDataHeapPtr = value;
-                this.RaisePropertyChanged(nameof(this.MDataHeapPtr));
+                if (this.mDataHeapPtr != value)
+                {
+                    this.mDataHeapPtr = value;
+                    this.RaisePropertyChanged(nameof(this.MDataHeapPtr));
+                }
             }
         }
 
@@ -169,10 +190,13 @@ namespace Twilight.Source.HeapVisualizer
                 return this.mResPtrPtr;
             }
 
-            private set
+            set
             {
-                this.mResPtrPtr = value;
-                this.RaisePropertyChanged(nameof(this.MResPtrPtr));
+                if (this.mResPtrPtr != value)
+                {
+                    this.mResPtrPtr = value;
+                    this.RaisePropertyChanged(nameof(this.MResPtrPtr));
+                }
             }
         }
 

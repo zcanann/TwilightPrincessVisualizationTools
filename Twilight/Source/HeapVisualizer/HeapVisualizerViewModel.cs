@@ -1,5 +1,6 @@
 ﻿namespace Twilight.Source.HeapVisualizer
 {
+    using GalaSoft.MvvmLight.Command;
     using System;
     using System.Buffers.Binary;
     using System.Collections.Generic;
@@ -7,6 +8,7 @@
     using System.Runtime.InteropServices;
     using System.Threading.Tasks;
     using System.Windows;
+    using System.Windows.Input;
     using System.Windows.Media;
     using System.Windows.Media.Imaging;
     using Twilight.Engine.Common;
@@ -143,7 +145,17 @@
                                 for (int actorSlotIndex = 0; actorSlotIndex < ActorReferenceCountTableMaxEntries; actorSlotIndex++)
                                 {
                                     Array.Copy(actorReferenceCountTable, actorSlotIndex * ActorSlotStructSize, slotData, 0, ActorSlotStructSize);
-                                    this.ActorReferenceCountSlots[actorSlotIndex] = ActorReferenceCountTableSlot.FromByteArray(slotData);
+                                    ActorReferenceCountTableSlot result = ActorReferenceCountTableSlot.FromByteArray(slotData);
+
+                                    // Copy data over field by field to avoid triggering the FullyObservableCollection changes.
+                                    this.ActorReferenceCountSlots[actorSlotIndex].Name = result.Name;
+                                    this.ActorReferenceCountSlots[actorSlotIndex].ReferenceCount = result.ReferenceCount;
+                                    this.ActorReferenceCountSlots[actorSlotIndex].Padding = result.Padding;
+                                    this.ActorReferenceCountSlots[actorSlotIndex].MDMCommandPtr = result.MDMCommandPtr;
+                                    this.ActorReferenceCountSlots[actorSlotIndex].MArchivePtr = result.MArchivePtr;
+                                    this.ActorReferenceCountSlots[actorSlotIndex].HeapPtr = result.HeapPtr;
+                                    this.ActorReferenceCountSlots[actorSlotIndex].MDataHeapPtr = result.MDataHeapPtr;
+                                    this.ActorReferenceCountSlots[actorSlotIndex].MResPtrPtr = result.MResPtrPtr;
 
                                     this.ColorActorSlotMemory(actorSlotIndex, 0, this.ActorReferenceCountSlots[actorSlotIndex].ReferenceCount > 0 ? Color.FromRgb(255, 0, 0) : Color.FromRgb(0, 0, 0));
                                 }

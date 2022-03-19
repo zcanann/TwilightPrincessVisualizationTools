@@ -15,7 +15,7 @@
     xmlns:types="clr-namespace:Twilight.Engine.Common;assembly=Twilight.Engine.Common"
     xmlns:view="clr-namespace:Twilight.View"
     x:Name="TwilightWindow"
-    Title="Twilight"
+    Title="Twilight Princess Visualization Tools"
     Width="1280"
     Height="960"
     x:ClassModifier="public"
