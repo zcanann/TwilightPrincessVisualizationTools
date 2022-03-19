@@ -93,7 +93,7 @@
                         Grid.Column="2"
                         VerticalAlignment="Center"
                         Foreground="{StaticResource TwilightColorWhite}"
-                        Text="Twilight" />
+                        Text="Twilight Princess Visualization Tools" />
                 </shell:Grid>
                 <shell:Menu
                     Grid.Column="1"
