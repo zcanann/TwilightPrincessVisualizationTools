@@ -1,5 +1,5 @@
 ﻿
-namespace Twilight.Source.HeapVisualizer
+namespace Twilight.Source.ActorReferenceCountVisualizer
 {
     using System;
     using System.Buffers.Binary;

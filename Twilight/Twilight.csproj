@@ -249,6 +249,9 @@
     <Page Update="View\FlagRecorder.xaml">
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
     </Page>
+    <Page Update="View\ActorReferenceCountVisualizer.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+    </Page>
     <Page Update="View\MainWindow.xaml">
       <Generator>XamlIntelliSenseFileGenerator</Generator>
     </Page>

@@ -9,6 +9,7 @@
     using Twilight.Source.Tasks;
     using Twilight.Source.PropertyViewer;
     using Twilight.Source.FlagRecorder;
+    using Twilight.Source.ActorReferenceCountVisualizer;
 
     /// <summary>
     /// This class contains static references to all the view models in the
@@ -87,6 +88,17 @@
             get
             {
                 return PropertyViewerViewModel.GetInstance();
+            }
+        }
+
+        /// <summary>
+        /// Gets the Actor Reference Count Visualizer view model.
+        /// </summary>
+        public ActorReferenceCountVisualizerViewModel ActorReferenceCountVisualizerViewModel
+        {
+            get
+            {
+                return ActorReferenceCountVisualizerViewModel.GetInstance();
             }
         }
 

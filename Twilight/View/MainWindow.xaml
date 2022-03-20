@@ -194,6 +194,12 @@
                             Style="{Binding .}"
                              />
                         <shell:MenuItem
+                            Header="Actor Reference Count Visualizer"
+                            IsCheckable="True"
+                            IsChecked="{Binding ActorReferenceCountVisualizerViewModel.IsVisible, Mode=TwoWay}"
+                            Style="{Binding .}"
+                             />
+                        <shell:MenuItem
                             Header="Heap Visualizer"
                             IsCheckable="True"
                             IsChecked="{Binding HeapVisualizerViewModel.IsVisible, Mode=TwoWay}"
@@ -281,6 +287,12 @@
                                 <view:PropertyViewer />
                             </shell:DataTemplate>
                         </view:ViewTemplateSelector.PropertyViewerViewTemplate>
+                        <!--  Actor Reference Count Visualizer  -->
+                        <view:ViewTemplateSelector.ActorReferenceCountVisualizerViewTemplate>
+                            <shell:DataTemplate>
+                                <view:ActorReferenceCountVisualizer />
+                            </shell:DataTemplate>
+                        </view:ViewTemplateSelector.ActorReferenceCountVisualizerViewTemplate>
                         <!--  Heap Visualizer  -->
                         <view:ViewTemplateSelector.HeapVisualizerViewTemplate>
                             <shell:DataTemplate>

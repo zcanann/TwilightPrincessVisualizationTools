@@ -9,6 +9,7 @@
     using System.Collections.Generic;
     using System.Windows;
     using System.Windows.Controls;
+    using Twilight.Source.ActorReferenceCountVisualizer;
 
     /// <summary>
     /// Provides the template required to view a pane.
@@ -29,6 +30,11 @@
         /// The template for the Property Viewer.
         /// </summary>
         private DataTemplate propertyViewerViewTemplate;
+
+        /// <summary>
+        /// The template for the Actor Reference Count Visualizer.
+        /// </summary>
+        private DataTemplate actorReferenceCountVisualizerViewTemplate;
 
         /// <summary>
         /// The template for the Heap Visualizer.
@@ -132,6 +138,23 @@
             {
                 this.propertyViewerViewTemplate = value;
                 this.DataTemplates[typeof(PropertyViewerViewModel)] = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the template for the Actor Reference Count Visualizer.
+        /// </summary>
+        public DataTemplate ActorReferenceCountVisualizerViewTemplate
+        {
+            get
+            {
+                return this.actorReferenceCountVisualizerViewTemplate;
+            }
+
+            set
+            {
+                this.actorReferenceCountVisualizerViewTemplate = value;
+                this.DataTemplates[typeof(ActorReferenceCountVisualizerViewModel)] = value;
             }
         }
 
