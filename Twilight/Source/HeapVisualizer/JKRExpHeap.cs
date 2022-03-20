@@ -39,11 +39,65 @@ namespace Twilight.Source.HeapVisualizer
         [MarshalAs(UnmanagedType.I4)]
         public UInt32 heapSize;
 
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 60)]
-        public Byte[] unknownData;
+        [MarshalAs(UnmanagedType.I4)]
+        public UInt32 unknownData1;
 
         [MarshalAs(UnmanagedType.I4)]
-        public UInt32 freeBlocksHeadPtr;
+        public UInt32 unknownData2;
+
+        [MarshalAs(UnmanagedType.I4)]
+        public UInt32 unknownData3;
+
+        [MarshalAs(UnmanagedType.I4)]
+        public UInt32 unknownData4;
+
+        [MarshalAs(UnmanagedType.I4)]
+        public UInt32 unknownPtr1; // Offset 76
+
+        [MarshalAs(UnmanagedType.I4)]
+        public UInt32 unknownPtr2;
+
+        [MarshalAs(UnmanagedType.I4)]
+        public UInt32 unknownPtr3;
+
+        [MarshalAs(UnmanagedType.I4)]
+        public UInt32 unknownPtr4;
+
+        [MarshalAs(UnmanagedType.I4)]
+        public UInt32 unknownPtr5;
+
+        [MarshalAs(UnmanagedType.I4)]
+        public UInt32 unknownPtr6;
+
+        [MarshalAs(UnmanagedType.I4)]
+        public UInt32 unknownData5;
+
+        [MarshalAs(UnmanagedType.I1)]
+        public byte unknownBool1;
+
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
+        public Byte[] padding1;
+
+        [MarshalAs(UnmanagedType.I1)]
+        public byte unknownBool2;
+
+        [MarshalAs(UnmanagedType.I1)]
+        public byte currentGroupId;
+
+        [MarshalAs(UnmanagedType.I1)]
+        public byte unknownBool3;
+
+        [MarshalAs(UnmanagedType.I1)]
+        public byte padding2;
+
+        [MarshalAs(UnmanagedType.I4)]
+        public UInt32 dataPtr;
+
+        [MarshalAs(UnmanagedType.I4)]
+        public UInt32 dataSize;
+
+        [MarshalAs(UnmanagedType.I4)]
+        public UInt32 freeBlocksHeadPtr; // Offset 120
 
         [MarshalAs(UnmanagedType.I4)]
         public UInt32 freeBlocksTailPtr;
@@ -70,8 +124,20 @@ namespace Twilight.Source.HeapVisualizer
                 result.jsuPtrLink4 = BinaryPrimitives.ReverseEndianness(result.jsuPtrLink4);
                 result.cMemBlockPtr1 = BinaryPrimitives.ReverseEndianness(result.cMemBlockPtr1);
                 result.cMemBlockPtr2 = BinaryPrimitives.ReverseEndianness(result.cMemBlockPtr2);
-                // result.unknownBuffer = BinaryPrimitives.ReverseEndianness(result.unknownBuffer);
                 result.heapSize = BinaryPrimitives.ReverseEndianness(result.heapSize);
+                result.unknownData1 = BinaryPrimitives.ReverseEndianness(result.unknownData1);
+                result.unknownData2 = BinaryPrimitives.ReverseEndianness(result.unknownData2);
+                result.unknownData3 = BinaryPrimitives.ReverseEndianness(result.unknownData3);
+                result.unknownData4 = BinaryPrimitives.ReverseEndianness(result.unknownData4);
+                result.unknownPtr1 = BinaryPrimitives.ReverseEndianness(result.unknownPtr1);
+                result.unknownPtr2 = BinaryPrimitives.ReverseEndianness(result.unknownPtr2);
+                result.unknownPtr3 = BinaryPrimitives.ReverseEndianness(result.unknownPtr3);
+                result.unknownPtr4 = BinaryPrimitives.ReverseEndianness(result.unknownPtr4);
+                result.unknownPtr5 = BinaryPrimitives.ReverseEndianness(result.unknownPtr5);
+                result.unknownPtr6 = BinaryPrimitives.ReverseEndianness(result.unknownPtr6);
+                result.unknownData5 = BinaryPrimitives.ReverseEndianness(result.unknownData5);
+                result.dataPtr = BinaryPrimitives.ReverseEndianness(result.dataPtr);
+                result.dataSize = BinaryPrimitives.ReverseEndianness(result.dataSize);
                 result.freeBlocksHeadPtr = BinaryPrimitives.ReverseEndianness(result.freeBlocksHeadPtr);
                 result.freeBlocksTailPtr = BinaryPrimitives.ReverseEndianness(result.freeBlocksTailPtr);
                 result.usedBlocksHeadPtr = BinaryPrimitives.ReverseEndianness(result.usedBlocksHeadPtr);

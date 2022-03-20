@@ -24,8 +24,11 @@ namespace Twilight.Source.HeapVisualizer
         [MarshalAs(UnmanagedType.I4)]
         public UInt32 maxTotalFreeSize;
 
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-        public Byte[] unknownBuffer;
+        [MarshalAs(UnmanagedType.I4)]
+        public UInt32 unknownPtr1;
+
+        [MarshalAs(UnmanagedType.I4)]
+        public UInt32 unknownPtr2;
 
         [MarshalAs(UnmanagedType.I4)]
         public UInt32 heapSize;
@@ -49,7 +52,8 @@ namespace Twilight.Source.HeapVisualizer
                 result.heapPointer = BinaryPrimitives.ReverseEndianness(result.heapPointer);
                 result.maxTotalUsedSize = BinaryPrimitives.ReverseEndianness(result.maxTotalUsedSize);
                 result.maxTotalFreeSize = BinaryPrimitives.ReverseEndianness(result.maxTotalFreeSize);
-                // result.unknownBuffer = BinaryPrimitives.ReverseEndianness(result.unknownBuffer);
+                result.unknownPtr1 = BinaryPrimitives.ReverseEndianness(result.unknownPtr1);
+                result.unknownPtr2 = BinaryPrimitives.ReverseEndianness(result.unknownPtr2);
                 result.heapSize = BinaryPrimitives.ReverseEndianness(result.heapSize);
                 result.usedCount = BinaryPrimitives.ReverseEndianness(result.usedCount);
                 result.totalUsedSize = BinaryPrimitives.ReverseEndianness(result.totalUsedSize);

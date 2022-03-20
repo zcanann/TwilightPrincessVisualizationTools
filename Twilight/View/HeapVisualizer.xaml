@@ -10,8 +10,8 @@
     xmlns:behaviors="clr-namespace:Twilight.Source.Mvvm.AttachedBehaviors"
     xmlns:converters="clr-namespace:Twilight.Source.Mvvm.Converters"
     x:Name="TwilightHeapVisualizer"
-    d:DesignHeight="420"
-    d:DesignWidth="256"
+    d:DesignHeight="320"
+    d:DesignWidth="640"
     x:ClassModifier="public"
     DataContext="{Binding HeapVisualizerViewModel, Source={StaticResource ViewModelLocator}}"
     mc:Ignorable="d">
@@ -19,14 +19,12 @@
         <![CDATA[ public HeapVisualizer() { InitializeComponent(); }]]>
     </x:Code>
     <Grid Background="{StaticResource TwilightColorPanel}">
+        <Grid.Resources>
+            <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+            <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
+        </Grid.Resources>
         <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="32"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -34,60 +32,207 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <StackPanel Grid.Row="0" Margin="8">
-            <TextBlock Foreground="White">Root Heap</TextBlock>
-            <TextBlock Foreground="White" Text="{Binding Path=BlockUsage[0]}"/>
-            <TextBlock Foreground="White" Text="{Binding Path=MemoryUsage[0]}"/>
+        <StackPanel
+            Background="{StaticResource TwilightColorGray20}"
+            Margin="0 8 0 0"
+            Orientation="Horizontal"
+            VerticalAlignment="Center"
+            Grid.Row="0"
+            Grid.ColumnSpan="2">
+            <TextBlock Margin="16 0 8 0" VerticalAlignment="Center" Foreground="White">Visualization Method: </TextBlock>
+            <ComboBox
+                HorizontalAlignment="Left"
+                Width="192"
+                Height="24"
+                Background="{StaticResource TwilightColorFrame}"
+                ItemsSource="{Binding HeapVisualizerViewModel.HeapVisualizationOptionList, Source={StaticResource ViewModelLocator}}"
+                SelectedItem="{Binding HeapVisualizerViewModel.SelectedHeapVisualizationOption, Source={StaticResource ViewModelLocator}, Mode=TwoWay}">
+                <ComboBox.Resources>
+                    <converters:HeapVisualizationOptionConverter x:Key="HeapVisualizationOptionConverter" />
+                </ComboBox.Resources>
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock
+                        Grid.Column="1"
+                        Foreground="{StaticResource TwilightColorWhite}"
+                        Text="{Binding Path=., Converter={StaticResource HeapVisualizationOptionConverter}}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+            <Grid Margin="8 0 0 0">
+                <ComboBox Name="displayedHeapsCombobox"
+                        IsReadOnly="True"
+                        HorizontalAlignment="Left"
+                        Background="{StaticResource TwilightColorFrame}"
+                        Width="192"
+                        Height="24">
+                    <intr:Interaction.Triggers>
+                        <intr:EventTrigger EventName="SelectionChanged">
+                            <intr:InvokeCommandAction Command="{Binding DisallowComboboxPreviewItemCommand}" CommandParameter="{Binding ElementName=displayedHeapsCombobox}"/>
+                        </intr:EventTrigger>
+                    </intr:Interaction.Triggers>
+                    <ComboBoxItem>
+                    <WrapPanel>
+                        <CheckBox Padding="0,0,4,0" IsChecked="{Binding ShowHeap0, Mode=TwoWay}" />
+                        <TextBlock VerticalAlignment="Center" Text="Root Heap" />
+                    </WrapPanel>
+                </ComboBoxItem>
+                <ComboBoxItem>
+                    <WrapPanel>
+                        <CheckBox IsHitTestVisible="True" Padding="0,0,4,0" IsChecked="{Binding ShowHeap1, Mode=TwoWay}" />
+                        <TextBlock VerticalAlignment="Center" Text="System Heap" />
+                    </WrapPanel>
+                </ComboBoxItem>
+                <ComboBoxItem>
+                    <WrapPanel>
+                        <CheckBox Padding="0,0,4,0" IsChecked="{Binding ShowHeap2, Mode=TwoWay}" />
+                        <TextBlock VerticalAlignment="Center" Text="Zelda Heap (DYN)" />
+                    </WrapPanel>
+                </ComboBoxItem>
+                <ComboBoxItem>
+                    <WrapPanel>
+                        <CheckBox Padding="0,0,4,0" IsChecked="{Binding ShowHeap3, Mode=TwoWay}" />
+                        <TextBlock VerticalAlignment="Center" Text="Game Heap (GAME)" />
+                    </WrapPanel>
+                </ComboBoxItem>
+                <ComboBoxItem>
+                    <WrapPanel>
+                        <CheckBox Padding="0,0,4,0" IsChecked="{Binding ShowHeap4, Mode=TwoWay}" />
+                        <TextBlock VerticalAlignment="Center" Text="Archive Heap (ACT)" />
+                    </WrapPanel>
+                </ComboBoxItem>
+                <ComboBoxItem>
+                    <WrapPanel>
+                        <CheckBox Padding="0,0,4,0" IsChecked="{Binding ShowHeap5, Mode=TwoWay}" />
+                        <TextBlock VerticalAlignment="Center" Text="J2D Heap" />
+                    </WrapPanel>
+                </ComboBoxItem>
+                <ComboBoxItem>
+                    <WrapPanel>
+                        <CheckBox Padding="0,0,4,0" IsChecked="{Binding ShowHeap6, Mode=TwoWay}" />
+                        <TextBlock VerticalAlignment="Center" Text="Host IO Heap" />
+                    </WrapPanel>
+                </ComboBoxItem>
+                <ComboBoxItem>
+                    <WrapPanel>
+                        <CheckBox Padding="0,0,4,0" IsChecked="{Binding ShowHeap7, Mode=TwoWay}" />
+                        <TextBlock VerticalAlignment="Center" Text="Command Heap" />
+                    </WrapPanel>
+                </ComboBoxItem>
+            </ComboBox>
+               <TextBlock
+                   Margin="4 0 0 0"
+                   Foreground="White"
+                   VerticalAlignment="Center"
+                   IsHitTestVisible="False"
+                   Text="Displayed Heaps..." />
+            </Grid>
         </StackPanel>
-        <Image Grid.Row="0" Grid.Column="1" Margin="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Source="{Binding Path=HeapBitmaps[0]}" Stretch="Fill" />
 
-        <StackPanel Grid.Row="1" Margin="8">
-            <TextBlock Foreground="White">System Heap</TextBlock>
-            <TextBlock Foreground="White" Text="{Binding Path=BlockUsage[1]}"/>
-            <TextBlock Foreground="White" Text="{Binding Path=MemoryUsage[1]}"/>
-        </StackPanel>
-        <Image Grid.Row="1" Grid.Column="1" Margin="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Source="{Binding Path=HeapBitmaps[1]}" Stretch="Fill" />
+        <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Margin="8">
+            <Grid Visibility="{Binding ShowHeap0, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="160"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Margin="8" Width="160">
+                    <TextBlock Foreground="White">Root Heap</TextBlock>
+                    <TextBlock Foreground="White" Text="{Binding Path=BlockUsage[0]}"/>
+                    <TextBlock Foreground="White" Text="{Binding Path=MemoryUsage[0]}"/>
+                </StackPanel>
+                <Image Grid.Column="1" Margin="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Source="{Binding Path=HeapBitmaps[0]}" Stretch="Fill" />
+            </Grid>
 
-        <StackPanel Grid.Row="2" Margin="8">
-            <TextBlock Foreground="White">Zelda Heap</TextBlock>
-            <TextBlock Foreground="White" Text="{Binding Path=BlockUsage[2]}"/>
-            <TextBlock Foreground="White" Text="{Binding Path=MemoryUsage[2]}"/>
-        </StackPanel>
-        <Image Grid.Row="2" Grid.Column="1" Margin="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Source="{Binding Path=HeapBitmaps[2]}" Stretch="Fill" />
+            <Grid Visibility="{Binding ShowHeap1, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="160"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Margin="8" Width="160">
+                    <TextBlock Foreground="White">System Heap</TextBlock>
+                    <TextBlock Foreground="White" Text="{Binding Path=BlockUsage[1]}"/>
+                    <TextBlock Foreground="White" Text="{Binding Path=MemoryUsage[1]}"/>
+                </StackPanel>
+                <Image Grid.Column="1" Margin="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Source="{Binding Path=HeapBitmaps[1]}" Stretch="Fill" />
+            </Grid>
 
-        <StackPanel Grid.Row="3" Margin="8">
-            <TextBlock Foreground="White">Game Heap</TextBlock>
-            <TextBlock Foreground="White" Text="{Binding Path=BlockUsage[3]}"/>
-            <TextBlock Foreground="White" Text="{Binding Path=MemoryUsage[3]}"/>
-        </StackPanel>
-        <Image Grid.Row="3" Grid.Column="1" Margin="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Source="{Binding Path=HeapBitmaps[3]}" Stretch="Fill" />
+            <Grid Visibility="{Binding ShowHeap2, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="160"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Margin="8">
+                    <TextBlock Foreground="White">Zelda Heap (DYN)</TextBlock>
+                    <TextBlock Foreground="White" Text="{Binding Path=BlockUsage[2]}"/>
+                    <TextBlock Foreground="White" Text="{Binding Path=MemoryUsage[2]}"/>
+                </StackPanel>
+                <Image Grid.Column="1" Margin="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Source="{Binding Path=HeapBitmaps[2]}" Stretch="Fill" />
+            </Grid>
 
-        <StackPanel Grid.Row="4" Margin="8">
-            <TextBlock Foreground="White">Archive Heap</TextBlock>
-            <TextBlock Foreground="White" Text="{Binding Path=BlockUsage[4]}"/>
-            <TextBlock Foreground="White" Text="{Binding Path=MemoryUsage[4]}"/>
-        </StackPanel>
-        <Image Grid.Row="4" Grid.Column="1" Margin="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Source="{Binding Path=HeapBitmaps[4]}" Stretch="Fill" />
+            <Grid Visibility="{Binding ShowHeap3, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="160"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Margin="8" Width="160">
+                    <TextBlock Foreground="White">Game Heap (GAME)</TextBlock>
+                    <TextBlock Foreground="White" Text="{Binding Path=BlockUsage[3]}"/>
+                    <TextBlock Foreground="White" Text="{Binding Path=MemoryUsage[3]}"/>
+                </StackPanel>
+                <Image Grid.Column="1" Margin="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Source="{Binding Path=HeapBitmaps[3]}" Stretch="Fill" />
+            </Grid>
 
-        <StackPanel Grid.Row="5" Margin="8">
-            <TextBlock Foreground="White">J2D Heap</TextBlock>
-            <TextBlock Foreground="White" Text="{Binding Path=BlockUsage[5]}"/>
-            <TextBlock Foreground="White" Text="{Binding Path=MemoryUsage[5]}"/>
-        </StackPanel>
-        <Image Grid.Row="5" Grid.Column="1" Margin="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Source="{Binding Path=HeapBitmaps[5]}" Stretch="Fill" />
+            <Grid Visibility="{Binding ShowHeap4, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="160"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Row="3" Margin="8">
+                    <TextBlock Foreground="White">Archive Heap (ACT)</TextBlock>
+                    <TextBlock Foreground="White" Text="{Binding Path=BlockUsage[4]}"/>
+                    <TextBlock Foreground="White" Text="{Binding Path=MemoryUsage[4]}"/>
+                </StackPanel>
+                <Image Grid.Column="1" Margin="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Source="{Binding Path=HeapBitmaps[4]}" Stretch="Fill" />
+            </Grid>
 
-        <StackPanel Grid.Row="6" Margin="8">
-            <TextBlock Foreground="White">Host IO Heap</TextBlock>
-            <TextBlock Foreground="White" Text="{Binding Path=BlockUsage[6]}"/>
-            <TextBlock Foreground="White" Text="{Binding Path=MemoryUsage[6]}"/>
-        </StackPanel>
-        <Image Grid.Row="6" Grid.Column="1" Margin="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Source="{Binding Path=HeapBitmaps[6]}" Stretch="Fill" />
+            <Grid Visibility="{Binding ShowHeap5, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="160"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Row="4" Margin="8">
+                    <TextBlock Foreground="White">J2D Heap</TextBlock>
+                    <TextBlock Foreground="White" Text="{Binding Path=BlockUsage[5]}"/>
+                    <TextBlock Foreground="White" Text="{Binding Path=MemoryUsage[5]}"/>
+                </StackPanel>
+                <Image Grid.Column="1" Margin="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Source="{Binding Path=HeapBitmaps[5]}" Stretch="Fill" />
+            </Grid>
 
-        <StackPanel Grid.Row="7" Margin="8">
-            <TextBlock Foreground="White">Command Heap</TextBlock>
-            <TextBlock Foreground="White" Text="{Binding Path=BlockUsage[7]}"/>
-            <TextBlock Foreground="White" Text="{Binding Path=MemoryUsage[7]}"/>
+            <Grid Visibility="{Binding ShowHeap6, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="160"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Row="6" Margin="8">
+                    <TextBlock Foreground="White">Host IO Heap</TextBlock>
+                    <TextBlock Foreground="White" Text="{Binding Path=BlockUsage[6]}"/>
+                    <TextBlock Foreground="White" Text="{Binding Path=MemoryUsage[6]}"/>
+                </StackPanel>
+                <Image Grid.Column="1" Margin="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Source="{Binding Path=HeapBitmaps[6]}" Stretch="Fill" />
+            </Grid>
+
+            <Grid Visibility="{Binding ShowHeap7, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="160"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Row="7" Margin="8">
+                    <TextBlock Foreground="White">Command Heap</TextBlock>
+                    <TextBlock Foreground="White" Text="{Binding Path=BlockUsage[7]}"/>
+                    <TextBlock Foreground="White" Text="{Binding Path=MemoryUsage[7]}"/>
+                </StackPanel>
+                <Image Grid.Column="1" Margin="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Source="{Binding Path=HeapBitmaps[7]}" Stretch="Fill" />
+            </Grid>
         </StackPanel>
-        <Image Grid.Row="7" Grid.Column="1" Margin="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Source="{Binding Path=HeapBitmaps[7]}" Stretch="Fill" />
     </Grid>
 </UserControl>

@@ -103,19 +103,22 @@
             {
                 while (this.CanUpdate)
                 {
-                    try
+                    if (this.IsVisible)
                     {
-                        if (SessionManager.Session.OpenedProcess != null)
+                        try
                         {
-                            Application.Current.Dispatcher.Invoke(() =>
+                            if (SessionManager.Session.OpenedProcess != null)
                             {
-                                UpdateActorSlots();
-                            });
+                                Application.Current.Dispatcher.Invoke(() =>
+                                {
+                                    UpdateActorSlots();
+                                });
+                            }
                         }
-                    }
-                    catch(Exception ex)
-                    {
-                        Logger.Log(LogLevel.Error, "Error updating the Heap Visualizer", ex);
+                        catch (Exception ex)
+                        {
+                            Logger.Log(LogLevel.Error, "Error updating the Heap Visualizer", ex);
+                        }
                     }
 
                     await Task.Delay(250);
