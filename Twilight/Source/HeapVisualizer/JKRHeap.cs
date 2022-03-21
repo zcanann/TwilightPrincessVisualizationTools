@@ -94,7 +94,7 @@ namespace Twilight.Source.HeapVisualizer
             GCHandle handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
             try
             {
-                JKRHeap result = (JKRHeap)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(JKRHeap));
+                JKRHeap result = Marshal.PtrToStructure<JKRHeap>(handle.AddrOfPinnedObject());
 
                 // Fix GC endianness
                 result.vTablePtr = BinaryPrimitives.ReverseEndianness(result.vTablePtr);

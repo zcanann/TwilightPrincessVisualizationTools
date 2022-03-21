@@ -16,10 +16,6 @@
     /// </summary>
     public class ActorReferenceCountVisualizerViewModel : ToolViewModel
     {
-        private static readonly UInt32 ActorReferenceTableBase = 0x804224B8;
-        private static readonly Int32 ActorReferenceCountTableMaxEntries = 128;
-        private static readonly Int32 ActorSlotStructSize = typeof(ActorReferenceCountTableSlot).StructLayoutAttribute.Size;
-
         private static readonly Int32 ActorSlotImageWidth = 2048;
         private static readonly Int32 ActorSlotImageHeight = 1;
         private static readonly Int32 DPI = 72;
@@ -36,11 +32,11 @@
         {
             DockingViewModel.GetInstance().RegisterViewModel(this);
 
-            this.ActorReferenceCountSlots = new FullyObservableCollection<ActorReferenceCountTableSlot>();
+            this.ActorReferenceCountSlots = new FullyObservableCollection<ActorReferenceCountTableSlotView>();
 
-            for (int index = 0; index < ActorReferenceCountTableMaxEntries; index++)
+            for (int index = 0; index < ActorReferenceCountTableConstants.ActorReferenceCountTableMaxEntries; index++)
             {
-                this.ActorReferenceCountSlots.Add(new ActorReferenceCountTableSlot());
+                this.ActorReferenceCountSlots.Add(new ActorReferenceCountTableSlotView(new ActorReferenceCountTableSlot()));
             }
 
             try
@@ -71,7 +67,7 @@
         /// <summary>
         /// Gets the list of actor reference count slots.
         /// </summary>
-        public FullyObservableCollection<ActorReferenceCountTableSlot> ActorReferenceCountSlots { get; private set; }
+        public FullyObservableCollection<ActorReferenceCountTableSlotView> ActorReferenceCountSlots { get; private set; }
 
         /// <summary>
         /// Gets the raw bitmap data for actor slot visualization.
@@ -132,8 +128,8 @@
             bool success = false;
             byte[] actorReferenceCountTable = MemoryReader.Instance.ReadBytes(
                 SessionManager.Session.OpenedProcess,
-                MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceTableBase, EmulatorType.Dolphin),
-                ActorSlotStructSize * ActorReferenceCountTableMaxEntries,
+                MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.ActorReferenceTableBase, EmulatorType.Dolphin),
+                ActorReferenceCountTableConstants.ActorSlotStructSize * ActorReferenceCountTableConstants.ActorReferenceCountTableMaxEntries,
                 out success);
 
             // Clear out old visual data
@@ -142,21 +138,24 @@
             // Update new data / visual data
             if (success)
             {
-                byte[] slotData = new byte[ActorSlotStructSize];
-                for (int actorSlotIndex = 0; actorSlotIndex < ActorReferenceCountTableMaxEntries; actorSlotIndex++)
+                byte[] slotData = new byte[ActorReferenceCountTableConstants.ActorSlotStructSize];
+                for (int actorSlotIndex = 0; actorSlotIndex < ActorReferenceCountTableConstants.ActorReferenceCountTableMaxEntries; actorSlotIndex++)
                 {
-                    Array.Copy(actorReferenceCountTable, actorSlotIndex * ActorSlotStructSize, slotData, 0, ActorSlotStructSize);
-                    ActorReferenceCountTableSlot result = ActorReferenceCountTableSlot.FromByteArray(slotData);
+                    Array.Copy(actorReferenceCountTable, actorSlotIndex * ActorReferenceCountTableConstants.ActorSlotStructSize, slotData, 0, ActorReferenceCountTableConstants.ActorSlotStructSize);
+                    ActorReferenceCountTableSlotView result = new ActorReferenceCountTableSlotView(ActorReferenceCountTableSlot.FromByteArray(slotData));
 
                     // Copy data over field by field to avoid triggering the FullyObservableCollection changes.
-                    this.ActorReferenceCountSlots[actorSlotIndex].Name = result.Name;
-                    this.ActorReferenceCountSlots[actorSlotIndex].ReferenceCount = result.ReferenceCount;
-                    this.ActorReferenceCountSlots[actorSlotIndex].Padding = result.Padding;
-                    this.ActorReferenceCountSlots[actorSlotIndex].MDMCommandPtr = result.MDMCommandPtr;
-                    this.ActorReferenceCountSlots[actorSlotIndex].MArchivePtr = result.MArchivePtr;
-                    this.ActorReferenceCountSlots[actorSlotIndex].HeapPtr = result.HeapPtr;
-                    this.ActorReferenceCountSlots[actorSlotIndex].MDataHeapPtr = result.MDataHeapPtr;
-                    this.ActorReferenceCountSlots[actorSlotIndex].MResPtrPtr = result.MResPtrPtr;
+                    if (result != null)
+                    {
+                        this.ActorReferenceCountSlots[actorSlotIndex].Name = result.Name;
+                        this.ActorReferenceCountSlots[actorSlotIndex].ReferenceCount = result.ReferenceCount;
+                        this.ActorReferenceCountSlots[actorSlotIndex].Padding = result.Padding;
+                        this.ActorReferenceCountSlots[actorSlotIndex].MDMCommandPtr = result.MDMCommandPtr;
+                        this.ActorReferenceCountSlots[actorSlotIndex].MArchivePtr = result.MArchivePtr;
+                        this.ActorReferenceCountSlots[actorSlotIndex].HeapPtr = result.HeapPtr;
+                        this.ActorReferenceCountSlots[actorSlotIndex].MDataHeapPtr = result.MDataHeapPtr;
+                        this.ActorReferenceCountSlots[actorSlotIndex].MResPtrPtr = result.MResPtrPtr;
+                    }
 
                     this.ColorActorSlotMemory(actorSlotIndex, this.ActorReferenceCountSlots[actorSlotIndex].ReferenceCount > 0 ? Color.FromRgb(255, 0, 0) : Color.FromRgb(0, 0, 0));
                 }
@@ -175,8 +174,8 @@
         {
             const Int32 seperatorSize = 4;
             Int32 bytesPerPixel = this.ActorSlotBitmap.Format.BitsPerPixel / 8;
-            Int32 pixelStart = (Int32)((double)actorSlotIndex * (double)ActorSlotImageWidth / (double)ActorReferenceCountTableMaxEntries);
-            Int32 pixelEnd = (Int32)((double)(actorSlotIndex + 1) * (double)ActorSlotImageWidth / (double)ActorReferenceCountTableMaxEntries);
+            Int32 pixelStart = (Int32)((double)actorSlotIndex * (double)ActorSlotImageWidth / (double)ActorReferenceCountTableConstants.ActorReferenceCountTableMaxEntries);
+            Int32 pixelEnd = (Int32)((double)(actorSlotIndex + 1) * (double)ActorSlotImageWidth / (double)ActorReferenceCountTableConstants.ActorReferenceCountTableMaxEntries);
 
             for (Int32 pixelIndex = pixelStart + seperatorSize; pixelIndex < pixelEnd; pixelIndex++)
             {

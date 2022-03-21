@@ -13,6 +13,7 @@
     using Twilight.Engine.Common;
     using Twilight.Engine.Common.Logging;
     using Twilight.Engine.Memory;
+    using Twilight.Source.ActorReferenceCountVisualizer;
     using Twilight.Source.Docking;
 
     /// <summary>
@@ -39,6 +40,8 @@
         /// Singleton instance of the <see cref="HeapVisualizerViewModel" /> class.
         /// </summary>
         private static HeapVisualizerViewModel heapVisualizerViewModelInstance = new HeapVisualizerViewModel();
+
+        private HeapCheck[] cachedHeapInfo = new HeapCheck[HeapCount];
 
         /// <summary>
         /// Prevents a default instance of the <see cref="HeapVisualizerViewModel" /> class from being created.
@@ -129,6 +132,7 @@
             set
             {
                 Properties.Settings.Default.ShowHeap0 = value;
+                Properties.Settings.Default.Save();
                 this.RaisePropertyChanged(nameof(this.ShowHeap0));
             }
         }
@@ -146,6 +150,7 @@
             set
             {
                 Properties.Settings.Default.ShowHeap1 = value;
+                Properties.Settings.Default.Save();
                 this.RaisePropertyChanged(nameof(this.ShowHeap1));
             }
         }
@@ -163,6 +168,7 @@
             set
             {
                 Properties.Settings.Default.ShowHeap2 = value;
+                Properties.Settings.Default.Save();
                 this.RaisePropertyChanged(nameof(this.ShowHeap2));
             }
         }
@@ -180,6 +186,7 @@
             set
             {
                 Properties.Settings.Default.ShowHeap3 = value;
+                Properties.Settings.Default.Save();
                 this.RaisePropertyChanged(nameof(this.ShowHeap3));
             }
         }
@@ -197,6 +204,7 @@
             set
             {
                 Properties.Settings.Default.ShowHeap4 = value;
+                Properties.Settings.Default.Save();
                 this.RaisePropertyChanged(nameof(this.ShowHeap4));
             }
         }
@@ -214,6 +222,7 @@
             set
             {
                 Properties.Settings.Default.ShowHeap5 = value;
+                Properties.Settings.Default.Save();
                 this.RaisePropertyChanged(nameof(this.ShowHeap5));
             }
         }
@@ -231,6 +240,7 @@
             set
             {
                 Properties.Settings.Default.ShowHeap6 = value;
+                Properties.Settings.Default.Save();
                 this.RaisePropertyChanged(nameof(this.ShowHeap6));
             }
         }
@@ -248,6 +258,7 @@
             set
             {
                 Properties.Settings.Default.ShowHeap7 = value;
+                Properties.Settings.Default.Save();
                 this.RaisePropertyChanged(nameof(this.ShowHeap7));
             }
         }
@@ -327,6 +338,7 @@
             {
                 case HeapVisualizationOption.CMem:
                     this.BuildHeapVisualizationsFromCMem();
+                    this.BuildActorReferenceVisualizations();
                     break;
                 case HeapVisualizationOption.NonZeroMemory:
                     this.BuildHeapVisualizationsFromNonZeroMemory();
@@ -362,6 +374,8 @@
                     Array.Copy(heapTable, heapIndex * HeapCheckSize, heapData, 0, HeapCheckSize);
                     HeapCheck heap = HeapCheck.FromByteArray(heapData);
 
+                    this.cachedHeapInfo[heapIndex] = heap;
+
                     // Arbitrary size cutoff
                     if (heap.heapSize > 1073741824)
                     {
@@ -377,6 +391,57 @@
                     if (success)
                     {
                         this.ColorHeapSlotMemory(fullHeapData, heapIndex, Color.FromRgb(255, 0, 0));
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Experimental idea that fails since we only have heap pointers, but not heap sizes
+        /// </summary>
+        private void BuildActorReferenceVisualizations()
+        {
+            // Read the entire actor reference counting table
+            bool success = false;
+            byte[] actorReferenceCountTable = MemoryReader.Instance.ReadBytes(
+                SessionManager.Session.OpenedProcess,
+                MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.ActorReferenceTableBase, EmulatorType.Dolphin),
+                ActorReferenceCountTableConstants.ActorSlotStructSize * ActorReferenceCountTableConstants.ActorReferenceCountTableMaxEntries,
+                out success);
+
+            // Update new data / visual data
+            if (success)
+            {
+                byte[] slotData = new byte[ActorReferenceCountTableConstants.ActorSlotStructSize];
+                for (int actorSlotIndex = 0; actorSlotIndex < ActorReferenceCountTableConstants.ActorReferenceCountTableMaxEntries; actorSlotIndex++)
+                {
+                    Array.Copy(actorReferenceCountTable, actorSlotIndex * ActorReferenceCountTableConstants.ActorSlotStructSize, slotData, 0, ActorReferenceCountTableConstants.ActorSlotStructSize);
+                    ActorReferenceCountTableSlot result = ActorReferenceCountTableSlot.FromByteArray(slotData);
+
+                    if (result != null)
+                    {
+                        Stack<UInt32> heapRefs = new Stack<UInt32>();
+
+                        heapRefs.Push(result.heapPtr);
+                        heapRefs.Push(result.mArchivePtr);
+                        heapRefs.Push(result.mResPtrPtr);
+
+                        while(heapRefs.Count > 0)
+                        {
+                            UInt32 pointer = heapRefs.Pop();
+
+                            if (pointer > 0)
+                            {
+                                for (Int32 heapIndex = 0; heapIndex < HeapCount; heapIndex++)
+                                {
+                                    if (this.cachedHeapInfo[heapIndex] != null && pointer >= this.cachedHeapInfo[heapIndex].heapPointer && pointer < this.cachedHeapInfo[heapIndex].heapPointer + this.cachedHeapInfo[heapIndex].heapSize)
+                                    {
+                                        const Int32 drawSize = 4096;
+                                        this.ColorHeapSlotMemory(pointer, drawSize, this.cachedHeapInfo[heapIndex].heapPointer, this.cachedHeapInfo[heapIndex].heapSize, heapIndex, Color.FromRgb(0, 255, 0), true);
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -472,6 +537,8 @@
                     byte[] heapData = new byte[HeapCheckSize];
                     Array.Copy(heapTable, heapIndex * HeapCheckSize, heapData, 0, HeapCheckSize);
                     HeapCheck heap = HeapCheck.FromByteArray(heapData);
+
+                    this.cachedHeapInfo[heapIndex] = heap;
 
                     byte[] jkrExpHeapData = MemoryReader.Instance.ReadBytes(
                         SessionManager.Session.OpenedProcess,
@@ -593,7 +660,7 @@
             }
         }
 
-        private void ColorHeapSlotMemory(UInt32 startAddress, UInt32 dataSize, UInt32 heapStartAddress, UInt32 heapSize, Int32 heapIndex, Color color)
+        private void ColorHeapSlotMemory(UInt32 startAddress, UInt32 dataSize, UInt32 heapStartAddress, UInt32 heapSize, Int32 heapIndex, Color color, bool overWrite = false)
         {
             Int32 bytesPerPixel = this.HeapBitmaps[heapIndex].Format.BitsPerPixel / 8;
             UInt32 offset = startAddress - heapStartAddress;
@@ -621,9 +688,18 @@
                     return;
                 }
 
-                this.HeapBitmapBuffers[heapIndex][pixelIndex * bytesPerPixel] |= color.B;
-                this.HeapBitmapBuffers[heapIndex][pixelIndex * bytesPerPixel + 1] |= color.G;
-                this.HeapBitmapBuffers[heapIndex][pixelIndex * bytesPerPixel + 2] |= color.R;
+                if (overWrite)
+                {
+                    this.HeapBitmapBuffers[heapIndex][pixelIndex * bytesPerPixel] = color.B;
+                    this.HeapBitmapBuffers[heapIndex][pixelIndex * bytesPerPixel + 1] = color.G;
+                    this.HeapBitmapBuffers[heapIndex][pixelIndex * bytesPerPixel + 2] = color.R;
+                }
+                else
+                {
+                    this.HeapBitmapBuffers[heapIndex][pixelIndex * bytesPerPixel] |= color.B;
+                    this.HeapBitmapBuffers[heapIndex][pixelIndex * bytesPerPixel + 1] |= color.G;
+                    this.HeapBitmapBuffers[heapIndex][pixelIndex * bytesPerPixel + 2] |= color.R;
+                }
             }
         }
     }

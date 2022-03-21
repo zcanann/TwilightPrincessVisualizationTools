@@ -3,8 +3,9 @@
   <RootPanel Orientation="Vertical">
     <LayoutAnchorablePaneGroup Orientation="Horizontal" DockHeight="1.7023475072615588*" FloatingWidth="1270" FloatingHeight="726" FloatingLeft="1173" FloatingTop="723">
       <LayoutAnchorablePane Id="df64b5be-6f6b-4af1-ab78-138702457e25" DockWidth="1.3726923582794688*" FloatingWidth="1270" FloatingHeight="726" FloatingLeft="1173" FloatingTop="723">
-        <LayoutAnchorable AutoHideMinWidth="100" AutoHideMinHeight="100" Title="Heap Visualizer" IsSelected="True" ContentId="HeapVisualizerViewModel" FloatingLeft="1173" FloatingTop="723" FloatingWidth="1270" FloatingHeight="726" LastActivationTimeStamp="03/19/2022 02:23:55" />
+        <LayoutAnchorable AutoHideMinWidth="100" AutoHideMinHeight="100" Title="Heap Visualizer" IsSelected="True" ContentId="HeapVisualizerViewModel" FloatingLeft="1173" FloatingTop="723" FloatingWidth="1270" FloatingHeight="726" LastActivationTimeStamp="03/20/2022 02:34:55" />
         <LayoutAnchorable AutoHideMinWidth="100" AutoHideMinHeight="100" Title="Flag Recorder" ContentId="FlagRecorderViewModel" FloatingLeft="762" FloatingTop="426" FloatingWidth="1270" FloatingHeight="726" LastActivationTimeStamp="03/19/2022 02:23:54" />
+        <LayoutAnchorable AutoHideMinWidth="100" AutoHideMinHeight="100" Title="Actor Reference Count Visualizer" ContentId="ActorReferenceCountVisualizerViewModel" />
       </LayoutAnchorablePane>
       <LayoutAnchorablePane DockWidth="0.29726254149459136*" FloatingWidth="1270" FloatingHeight="726" FloatingLeft="505" FloatingTop="415">
         <LayoutAnchorable AutoHideMinWidth="100" AutoHideMinHeight="100" Title="Property Viewer" IsSelected="True" ContentId="PropertyViewerViewModel" FloatingLeft="505" FloatingTop="415" FloatingWidth="1270" FloatingHeight="726" LastActivationTimeStamp="03/19/2022 02:23:44" PreviousContainerId="df64b5be-6f6b-4af1-ab78-138702457e25" PreviousContainerIndex="2" />
@@ -14,16 +15,12 @@
       <LayoutAnchorablePaneGroup Orientation="Vertical" DockWidth="2.08129423945407*">
         <LayoutAnchorablePaneGroup Orientation="Horizontal" DockWidth="1.68960553196603*" DockHeight="1.29720571079385*">
           <LayoutAnchorablePane Id="bd1dfd76-4792-469f-ba48-65d989e701c8" DockWidth="0.962144854321346*" FloatingWidth="1270" FloatingHeight="726" FloatingLeft="-61" FloatingTop="476" />
-          <LayoutAnchorablePane Id="9e24467d-d273-4039-b9f6-0170695cb8ff" DockWidth="1.61790914482819*" DockHeight="1.16110216099106*" />
         </LayoutAnchorablePaneGroup>
         <LayoutAnchorablePaneGroup Orientation="Horizontal" DockWidth="1.6191364741636*" DockHeight="0.702794289206155*" FloatingWidth="1270" FloatingHeight="899" FloatingLeft="-180" FloatingTop="567">
           <LayoutAnchorablePane Id="d19b7bf5-ef9e-4745-9a3b-03d44102084c" DockWidth="1.6191364741636*" FloatingWidth="1270" FloatingHeight="899" FloatingLeft="-180" FloatingTop="567">
             <LayoutAnchorable AutoHideMinWidth="100" AutoHideMinHeight="100" Title="Output" IsSelected="True" ContentId="OutputViewModel" FloatingLeft="-180" FloatingTop="567" FloatingWidth="1270" FloatingHeight="899" LastActivationTimeStamp="03/19/2022 02:23:17" />
           </LayoutAnchorablePane>
         </LayoutAnchorablePaneGroup>
-      </LayoutAnchorablePaneGroup>
-      <LayoutAnchorablePaneGroup Orientation="Vertical" DockWidth="0.848259170397292*" DockHeight="0.9383453431467*">
-        <LayoutAnchorablePane Id="bb71dcd2-1626-4824-96f1-9a2e1ffe7866" DockWidth="1.23994787788533*" DockHeight="0.9383453431467*" FloatingWidth="1270" FloatingHeight="726" FloatingLeft="108" FloatingTop="361" />
       </LayoutAnchorablePaneGroup>
     </LayoutPanel>
   </RootPanel>
@@ -33,6 +30,6 @@
   <BottomSide />
   <FloatingWindows />
   <Hidden>
-    <LayoutAnchorable AutoHideMinWidth="100" AutoHideMinHeight="100" Title="Process Selector" IsSelected="True" ContentId="ProcessSelectorViewModel" FloatingLeft="-425" FloatingTop="335" FloatingWidth="1270" FloatingHeight="726" LastActivationTimeStamp="03/19/2022 02:23:10" PreviousContainerId="bd1dfd76-4792-469f-ba48-65d989e701c8" PreviousContainerIndex="0" />
+    <LayoutAnchorable AutoHideMinWidth="100" AutoHideMinHeight="100" Title="Process Selector" IsSelected="True" ContentId="ProcessSelectorViewModel" FloatingLeft="-425" FloatingTop="335" FloatingWidth="1270" FloatingHeight="726" LastActivationTimeStamp="03/20/2022 02:34:54" PreviousContainerId="bd1dfd76-4792-469f-ba48-65d989e701c8" PreviousContainerIndex="0" />
   </Hidden>
 </LayoutRoot>

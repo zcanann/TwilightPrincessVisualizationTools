@@ -113,7 +113,7 @@ namespace Twilight.Source.HeapVisualizer
             GCHandle handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
             try
             {
-                JKRExpHeap result = (JKRExpHeap)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(JKRExpHeap));
+                JKRExpHeap result = Marshal.PtrToStructure<JKRExpHeap>(handle.AddrOfPinnedObject());
 
                 // Fix GC endianness
                 result.vTablePtr = BinaryPrimitives.ReverseEndianness(result.vTablePtr);

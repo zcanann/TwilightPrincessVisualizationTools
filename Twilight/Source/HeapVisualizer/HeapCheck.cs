@@ -44,7 +44,7 @@ namespace Twilight.Source.HeapVisualizer
             GCHandle handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
             try
             {
-                HeapCheck result = (HeapCheck)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(HeapCheck));
+                HeapCheck result = Marshal.PtrToStructure<HeapCheck>(handle.AddrOfPinnedObject());
 
                 // Fix GC endianness
                 result.mNamePointer = BinaryPrimitives.ReverseEndianness(result.mNamePointer);

@@ -11,7 +11,7 @@
     xmlns:converters="clr-namespace:Twilight.Source.Mvvm.Converters"
     x:Name="TwilightHeapVisualizer"
     d:DesignHeight="320"
-    d:DesignWidth="640"
+    d:DesignWidth="720"
     x:ClassModifier="public"
     DataContext="{Binding HeapVisualizerViewModel, Source={StaticResource ViewModelLocator}}"
     mc:Ignorable="d">
@@ -120,12 +120,82 @@
                     </WrapPanel>
                 </ComboBoxItem>
             </ComboBox>
-               <TextBlock
-                   Margin="4 0 0 0"
-                   Foreground="White"
-                   VerticalAlignment="Center"
-                   IsHitTestVisible="False"
-                   Text="Displayed Heaps..." />
+            <TextBlock
+                Margin="4 0 0 0"
+                Foreground="White"
+                VerticalAlignment="Center"
+                IsHitTestVisible="False"
+                Text="Displayed Heaps..." />
+            </Grid>
+            <Grid Margin="8 0 0 0">
+                <ComboBox Name="legendCombobox"
+                        IsReadOnly="True"
+                        HorizontalAlignment="Left"
+                        Background="{StaticResource TwilightColorFrame}"
+                        Width="192"
+                        Height="24">
+                    <intr:Interaction.Triggers>
+                        <intr:EventTrigger EventName="SelectionChanged">
+                            <intr:InvokeCommandAction Command="{Binding DisallowComboboxPreviewItemCommand}" CommandParameter="{Binding ElementName=legendCombobox}"/>
+                        </intr:EventTrigger>
+                    </intr:Interaction.Triggers>
+                    <ComboBoxItem>
+                        <WrapPanel>
+                            <Rectangle Margin="0 0 8 0" Width="8" Height="8">
+                                <Rectangle.Fill>
+                                    <SolidColorBrush Color="Red" />
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <TextBlock VerticalAlignment="Center" Text="Allocation" />
+                        </WrapPanel>
+                    </ComboBoxItem>
+                    <ComboBoxItem>
+                        <WrapPanel>
+                            <Rectangle Margin="0 0 8 0" Width="8" Height="8">
+                                <Rectangle.Fill>
+                                    <SolidColorBrush Color="Black" />
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <TextBlock VerticalAlignment="Center" Text="No Allocation" />
+                        </WrapPanel>
+                    </ComboBoxItem>
+                    <ComboBoxItem>
+                        <WrapPanel>
+                            <Rectangle Margin="0 0 8 0" Width="8" Height="8">
+                                <Rectangle.Fill>
+                                    <SolidColorBrush Color="Blue" />
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <TextBlock VerticalAlignment="Center" Text="Free Slot (?)" />
+                        </WrapPanel>
+                    </ComboBoxItem>
+                    <ComboBoxItem>
+                        <WrapPanel>
+                            <Rectangle Margin="0 0 8 0" Width="8" Height="8">
+                                <Rectangle.Fill>
+                                    <SolidColorBrush Color="Green" />
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <TextBlock VerticalAlignment="Center" Text="Actor Table Entry (size inaccurate)" />
+                        </WrapPanel>
+                    </ComboBoxItem>
+                    <ComboBoxItem>
+                        <WrapPanel>
+                            <Rectangle Margin="0 0 8 0" Width="8" Height="8">
+                                <Rectangle.Fill>
+                                    <SolidColorBrush Color="Magenta" />
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <TextBlock VerticalAlignment="Center" Text="Used + Free Slot (contradiction)" />
+                        </WrapPanel>
+                    </ComboBoxItem>
+                </ComboBox>
+                <TextBlock
+                Margin="4 0 0 0"
+                Foreground="White"
+                VerticalAlignment="Center"
+                IsHitTestVisible="False"
+                Text="Legend..." />
             </Grid>
         </StackPanel>
 
