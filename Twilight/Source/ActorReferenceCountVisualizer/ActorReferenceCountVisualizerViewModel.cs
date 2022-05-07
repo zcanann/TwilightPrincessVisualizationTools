@@ -122,6 +122,8 @@
             });
         }
 
+        private byte[] slotData = new byte[ActorReferenceCountTableConstants.ActorSlotStructSize];
+
         private void UpdateActorSlots()
         {
             // Read the entire actor reference counting table
@@ -138,7 +140,6 @@
             // Update new data / visual data
             if (success)
             {
-                byte[] slotData = new byte[ActorReferenceCountTableConstants.ActorSlotStructSize];
                 for (int actorSlotIndex = 0; actorSlotIndex < ActorReferenceCountTableConstants.ActorReferenceCountTableMaxEntries; actorSlotIndex++)
                 {
                     Array.Copy(actorReferenceCountTable, actorSlotIndex * ActorReferenceCountTableConstants.ActorSlotStructSize, slotData, 0, ActorReferenceCountTableConstants.ActorSlotStructSize);

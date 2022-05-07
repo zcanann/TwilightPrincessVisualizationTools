@@ -21,7 +21,8 @@
     /// </summary>
     public class HeapVisualizerViewModel : ToolViewModel
     {
-        private static readonly UInt32 HeapTableBase = 0x803D32E0;
+        // private static readonly UInt32 HeapTableBase = 0x803D32E0;
+        private static readonly UInt32 HeapTableBase = 0x8061A7F8;
         private static readonly Int32 HeapCount = 8;
 
         private static readonly Int32 HeapImageWidth = 65536;
@@ -396,6 +397,8 @@
             }
         }
 
+        private byte[] slotData = new byte[ActorReferenceCountTableConstants.ActorSlotStructSize];
+
         /// <summary>
         /// Experimental idea that fails since we only have heap pointers, but not heap sizes
         /// </summary>
@@ -412,7 +415,6 @@
             // Update new data / visual data
             if (success)
             {
-                byte[] slotData = new byte[ActorReferenceCountTableConstants.ActorSlotStructSize];
                 for (int actorSlotIndex = 0; actorSlotIndex < ActorReferenceCountTableConstants.ActorReferenceCountTableMaxEntries; actorSlotIndex++)
                 {
                     Array.Copy(actorReferenceCountTable, actorSlotIndex * ActorReferenceCountTableConstants.ActorSlotStructSize, slotData, 0, ActorReferenceCountTableConstants.ActorSlotStructSize);
