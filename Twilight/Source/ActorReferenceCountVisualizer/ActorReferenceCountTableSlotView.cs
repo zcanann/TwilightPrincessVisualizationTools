@@ -1,6 +1,7 @@
 ﻿
 namespace Twilight.Source.ActorReferenceCountVisualizer
 {
+    using GalaSoft.MvvmLight.Command;
     using System;
     using System.Buffers.Binary;
     using System.Collections.Generic;
@@ -9,6 +10,9 @@ namespace Twilight.Source.ActorReferenceCountVisualizer
     using System.Runtime.InteropServices;
     using System.Text;
     using System.Threading.Tasks;
+    using System.Windows.Input;
+    using Twilight.Engine.Common;
+    using Twilight.Engine.Memory;
 
     public class ActorReferenceCountTableSlotView : INotifyPropertyChanged
     {
@@ -31,10 +35,17 @@ namespace Twilight.Source.ActorReferenceCountVisualizer
             set
             {
                 byte[] data = Encoding.ASCII.GetBytes(value);
-                if (!Array.Equals(this.Slot.name, data))
+                Array.Resize(ref data, 12);
+
+                if (this.Slot.name == null || !Enumerable.SequenceEqual(this.Slot.name, data))
                 {
                     this.Slot.name = data;
                     this.RaisePropertyChanged(nameof(this.Name));
+                    MemoryWriter.Instance.WriteBytes(
+                        SessionManager.Session.OpenedProcess,
+                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.ActorReferenceTableBase + (UInt64)this.Slot.ActorSlotIndex * 0x24, EmulatorType.Dolphin),
+                        data
+                    );
                 }
             }
         }
@@ -52,6 +63,11 @@ namespace Twilight.Source.ActorReferenceCountVisualizer
                 {
                     this.Slot.referenceCount = value;
                     this.RaisePropertyChanged(nameof(this.ReferenceCount));
+                    MemoryWriter.Instance.Write<UInt16>(
+                        SessionManager.Session.OpenedProcess,
+                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.ActorReferenceTableBase + 0xC + (UInt64)this.Slot.ActorSlotIndex * 0x24, EmulatorType.Dolphin),
+                        BinaryPrimitives.ReverseEndianness(value)
+                    );
                 }
             }
         }
@@ -86,6 +102,11 @@ namespace Twilight.Source.ActorReferenceCountVisualizer
                 {
                     this.Slot.mDMCommandPtr = value;
                     this.RaisePropertyChanged(nameof(this.MDMCommandPtr));
+                    MemoryWriter.Instance.Write<UInt32>(
+                        SessionManager.Session.OpenedProcess,
+                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.ActorReferenceTableBase + 0x10 + (UInt64)this.Slot.ActorSlotIndex * 0x24, EmulatorType.Dolphin),
+                        BinaryPrimitives.ReverseEndianness(value)
+                    );
                 }
             }
         }
@@ -103,6 +124,11 @@ namespace Twilight.Source.ActorReferenceCountVisualizer
                 {
                     this.Slot.mArchivePtr = value;
                     this.RaisePropertyChanged(nameof(this.MArchivePtr));
+                    MemoryWriter.Instance.Write<UInt32>(
+                        SessionManager.Session.OpenedProcess,
+                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.ActorReferenceTableBase + 0x14 + (UInt64)this.Slot.ActorSlotIndex * 0x24, EmulatorType.Dolphin),
+                        BinaryPrimitives.ReverseEndianness(value)
+                    );
                 }
             }
         }
@@ -120,6 +146,11 @@ namespace Twilight.Source.ActorReferenceCountVisualizer
                 {
                     this.Slot.heapPtr = value;
                     this.RaisePropertyChanged(nameof(this.HeapPtr));
+                    MemoryWriter.Instance.Write<UInt32>(
+                        SessionManager.Session.OpenedProcess,
+                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.ActorReferenceTableBase + 0x18 + (UInt64)this.Slot.ActorSlotIndex * 0x24, EmulatorType.Dolphin),
+                        BinaryPrimitives.ReverseEndianness(value)
+                    );
                 }
             }
         }
@@ -137,6 +168,11 @@ namespace Twilight.Source.ActorReferenceCountVisualizer
                 {
                     this.Slot.mDataHeapPtr = value;
                     this.RaisePropertyChanged(nameof(this.MDataHeapPtr));
+                    MemoryWriter.Instance.Write<UInt32>(
+                        SessionManager.Session.OpenedProcess,
+                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.ActorReferenceTableBase + 0x1C + (UInt64)this.Slot.ActorSlotIndex * 0x24, EmulatorType.Dolphin),
+                        BinaryPrimitives.ReverseEndianness(value)
+                    );
                 }
             }
         }
@@ -154,8 +190,25 @@ namespace Twilight.Source.ActorReferenceCountVisualizer
                 {
                     this.Slot.mResPtrPtr = value;
                     this.RaisePropertyChanged(nameof(this.MResPtrPtr));
+                    MemoryWriter.Instance.Write<UInt32>(
+                        SessionManager.Session.OpenedProcess,
+                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.ActorReferenceTableBase + 0x20 + (UInt64)this.Slot.ActorSlotIndex * 0x24, EmulatorType.Dolphin),
+                        BinaryPrimitives.ReverseEndianness(value)
+                    );
                 }
             }
+        }
+
+        public void RefreshAllProperties()
+        {
+            this.RaisePropertyChanged(nameof(this.Name));
+            this.RaisePropertyChanged(nameof(this.ReferenceCount));
+            this.RaisePropertyChanged(nameof(this.Padding));
+            this.RaisePropertyChanged(nameof(this.MDMCommandPtr));
+            this.RaisePropertyChanged(nameof(this.MArchivePtr));
+            this.RaisePropertyChanged(nameof(this.HeapPtr));
+            this.RaisePropertyChanged(nameof(this.MDataHeapPtr));
+            this.RaisePropertyChanged(nameof(this.MResPtrPtr));
         }
 
         /// <summary>

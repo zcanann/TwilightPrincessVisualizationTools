@@ -11,7 +11,7 @@
     xmlns:converters="clr-namespace:Twilight.Source.Mvvm.Converters"
     x:Name="TwilightActorReferenceCountVisualizer"
     d:DesignHeight="420"
-    d:DesignWidth="256"
+    d:DesignWidth="640"
     x:ClassModifier="public"
     DataContext="{Binding ActorReferenceCountVisualizerViewModel, Source={StaticResource ViewModelLocator}}"
     mc:Ignorable="d">
@@ -96,49 +96,49 @@
                 <DataGridTemplateColumn Header="Name" Width="Auto" IsReadOnly="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Margin="4,0,4,0" Text="{Binding Path=Name}" />
+                            <TextBox Background="{StaticResource TwilightColorPanel}" Foreground="{StaticResource TwilightColorWhite}" Margin="4,0,4,0" Text="{Binding Path=Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="Reference Count" Width="Auto" IsReadOnly="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Margin="4,0,4,0" Text="{Binding Path=ReferenceCount}" />
+                            <TextBox Background="{StaticResource TwilightColorPanel}" Foreground="{StaticResource TwilightColorWhite}" Margin="4,0,4,0" Text="{Binding Path=ReferenceCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="DM Command Ptr" Width="Auto" IsReadOnly="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Margin="4,0,4,0" Text="{Binding Path=MDMCommandPtr, Converter={StaticResource IntToHexConverter}}" />
+                            <TextBox Background="{StaticResource TwilightColorPanel}" Foreground="{StaticResource TwilightColorWhite}" Margin="4,0,4,0" Text="{Binding Path=MDMCommandPtr, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource IntToHexConverter}}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="Archive Ptr" IsReadOnly="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Margin="4,0,4,0" Text="{Binding Path=MArchivePtr, Converter={StaticResource IntToHexConverter}}" />
+                            <TextBox Background="{StaticResource TwilightColorPanel}" Foreground="{StaticResource TwilightColorWhite}" Margin="4,0,4,0" Text="{Binding Path=MArchivePtr, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource IntToHexConverter}}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="Heap Ptr" IsReadOnly="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Margin="4,0,4,0" Text="{Binding Path=HeapPtr, Converter={StaticResource IntToHexConverter}}" />
+                            <TextBox Background="{StaticResource TwilightColorPanel}" Foreground="{StaticResource TwilightColorWhite}" Margin="4,0,4,0" Text="{Binding Path=HeapPtr, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource IntToHexConverter}}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="Data Heap Ptr" IsReadOnly="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Margin="4,0,4,0" Text="{Binding Path=MDataHeapPtr, Converter={StaticResource IntToHexConverter}}" />
+                            <TextBox Background="{StaticResource TwilightColorPanel}" Foreground="{StaticResource TwilightColorWhite}" Margin="4,0,4,0" Text="{Binding Path=MDataHeapPtr, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource IntToHexConverter}}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="Resource Ptr Ptr" IsReadOnly="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Margin="4,0,4,0" Text="{Binding Path=MResPtrPtr, Converter={StaticResource IntToHexConverter}}" />
+                            <TextBox Background="{StaticResource TwilightColorPanel}" Foreground="{StaticResource TwilightColorWhite}" Margin="4,0,4,0" Text="{Binding Path=MResPtrPtr, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource IntToHexConverter}}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

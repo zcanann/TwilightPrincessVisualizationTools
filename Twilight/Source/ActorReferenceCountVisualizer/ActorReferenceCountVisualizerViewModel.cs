@@ -1,6 +1,7 @@
 ﻿namespace Twilight.Source.ActorReferenceCountVisualizer
 {
     using System;
+    using System.Text;
     using System.Threading.Tasks;
     using System.Windows;
     using System.Windows.Media;
@@ -122,6 +123,8 @@
             });
         }
 
+        private byte[] slotData = new byte[ActorReferenceCountTableConstants.ActorSlotStructSize];
+
         private void UpdateActorSlots()
         {
             // Read the entire actor reference counting table
@@ -138,23 +141,24 @@
             // Update new data / visual data
             if (success)
             {
-                byte[] slotData = new byte[ActorReferenceCountTableConstants.ActorSlotStructSize];
                 for (int actorSlotIndex = 0; actorSlotIndex < ActorReferenceCountTableConstants.ActorReferenceCountTableMaxEntries; actorSlotIndex++)
                 {
                     Array.Copy(actorReferenceCountTable, actorSlotIndex * ActorReferenceCountTableConstants.ActorSlotStructSize, slotData, 0, ActorReferenceCountTableConstants.ActorSlotStructSize);
-                    ActorReferenceCountTableSlotView result = new ActorReferenceCountTableSlotView(ActorReferenceCountTableSlot.FromByteArray(slotData));
+                    ActorReferenceCountTableSlotView result = new ActorReferenceCountTableSlotView(ActorReferenceCountTableSlot.FromByteArray(slotData, actorSlotIndex));
 
                     // Copy data over field by field to avoid triggering the FullyObservableCollection changes.
                     if (result != null)
                     {
-                        this.ActorReferenceCountSlots[actorSlotIndex].Name = result.Name;
-                        this.ActorReferenceCountSlots[actorSlotIndex].ReferenceCount = result.ReferenceCount;
-                        this.ActorReferenceCountSlots[actorSlotIndex].Padding = result.Padding;
-                        this.ActorReferenceCountSlots[actorSlotIndex].MDMCommandPtr = result.MDMCommandPtr;
-                        this.ActorReferenceCountSlots[actorSlotIndex].MArchivePtr = result.MArchivePtr;
-                        this.ActorReferenceCountSlots[actorSlotIndex].HeapPtr = result.HeapPtr;
-                        this.ActorReferenceCountSlots[actorSlotIndex].MDataHeapPtr = result.MDataHeapPtr;
-                        this.ActorReferenceCountSlots[actorSlotIndex].MResPtrPtr = result.MResPtrPtr;
+                        // Avoid calling setters to bypass the write-back to Dolphin memory
+                        this.ActorReferenceCountSlots[actorSlotIndex].Slot.name = Encoding.ASCII.GetBytes(result.Name);
+                        this.ActorReferenceCountSlots[actorSlotIndex].Slot.referenceCount = result.ReferenceCount;
+                        this.ActorReferenceCountSlots[actorSlotIndex].Slot.padding = result.Padding;
+                        this.ActorReferenceCountSlots[actorSlotIndex].Slot.mDMCommandPtr = result.MDMCommandPtr;
+                        this.ActorReferenceCountSlots[actorSlotIndex].Slot.mArchivePtr = result.MArchivePtr;
+                        this.ActorReferenceCountSlots[actorSlotIndex].Slot.heapPtr = result.HeapPtr;
+                        this.ActorReferenceCountSlots[actorSlotIndex].Slot.mDataHeapPtr = result.MDataHeapPtr;
+                        this.ActorReferenceCountSlots[actorSlotIndex].Slot.mResPtrPtr = result.MResPtrPtr;
+                        this.ActorReferenceCountSlots[actorSlotIndex].RefreshAllProperties();
                     }
 
                     this.ColorActorSlotMemory(actorSlotIndex, this.ActorReferenceCountSlots[actorSlotIndex].ReferenceCount > 0 ? Color.FromRgb(255, 0, 0) : Color.FromRgb(0, 0, 0));
