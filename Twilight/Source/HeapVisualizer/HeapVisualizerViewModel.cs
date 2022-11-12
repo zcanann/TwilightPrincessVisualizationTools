@@ -2,8 +2,10 @@
 {
     using GalaSoft.MvvmLight.Command;
     using System;
+    using System.Buffers.Binary;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Text;
     using System.Threading.Tasks;
     using System.Windows;
     using System.Windows.Controls;
@@ -15,21 +17,57 @@
     using Twilight.Engine.Memory;
     using Twilight.Source.ActorReferenceCountVisualizer;
     using Twilight.Source.Docking;
+    using Twilight.Source.Main;
 
     /// <summary>
     /// View model for the Heap Visualizer.
     /// </summary>
     public class HeapVisualizerViewModel : ToolViewModel
     {
-        private static readonly UInt32 HeapTableBase = 0x803D32E0;
-        // private static readonly UInt32 HeapTableBase = 0x8061A7F8; // Wii
+        private static readonly UInt32 HeapTableBaseGc = 0x803A2EF4;
+        private static readonly UInt32 HeapTableBaseWii1_0 = 0x803F5850;
+        private static readonly UInt32 HeapTableBaseWii1_2 = 0x803F5850;
+
+        private static readonly List<Tuple<UInt32, UInt32>> HeapsGc = new List<Tuple<UInt32, UInt32>>
+        {
+            Tuple.Create<UInt32, UInt32>(0x00000000, 0x00000000),   // Root
+            Tuple.Create<UInt32, UInt32>(0x00000000, 0x00000000),   // System
+            Tuple.Create<UInt32, UInt32>(0x80502400, 0x80a2ae0c),   // Zelda
+            Tuple.Create<UInt32, UInt32>(0x81399ad0, 0x817e7ad0),   // Game
+            Tuple.Create<UInt32, UInt32>(0x80a3d6b0, 0x8131cab0),   // Archive
+            Tuple.Create<UInt32, UInt32>(0x8131cac0, 0x81399ac0),   // J2D
+            Tuple.Create<UInt32, UInt32>(0x00000000, 0x00000000),   // HostIO
+            Tuple.Create<UInt32, UInt32>(0x80a3c6a0, 0x80a3d6a0),   // Command
+        };
+
+        private static readonly List<Tuple<UInt32, UInt32>> HeapsWii1_0 = new List<Tuple<UInt32, UInt32>>
+        {
+            Tuple.Create<UInt32, UInt32>(0x00000000, 0x00000000),   // Root
+            Tuple.Create<UInt32, UInt32>(0x00000000, 0x00000000),   // System
+            Tuple.Create<UInt32, UInt32>(0x80607820, 0x80f06f8c),   // Zelda
+            Tuple.Create<UInt32, UInt32>(0x81099840, 0x817e7840),   // Game
+            Tuple.Create<UInt32, UInt32>(0x911000a0, 0x92020ca0),   // Archive
+            Tuple.Create<UInt32, UInt32>(0x92020cb0, 0x920dc4b0),   // J2D
+            Tuple.Create<UInt32, UInt32>(0x80f18820, 0x80f19820),   // Command
+            Tuple.Create<UInt32, UInt32>(0x80f19830, 0x81099830),   // Dynamic Link
+        };
+
+        private static readonly List<Tuple<UInt32, UInt32>> HeapsWii1_2 = new List<Tuple<UInt32, UInt32>>
+        {
+            Tuple.Create<UInt32, UInt32>(0x00000000, 0x00000000),   // Root
+            Tuple.Create<UInt32, UInt32>(0x00000000, 0x00000000),   // System
+            Tuple.Create<UInt32, UInt32>(0x805ed8a0, 0x80f06d4c),   // Zelda
+            Tuple.Create<UInt32, UInt32>(0x81099600, 0x817e7600),   // Game
+            Tuple.Create<UInt32, UInt32>(0x911000a0, 0x92020ca0),   // Archive
+            Tuple.Create<UInt32, UInt32>(0x92020cb0, 0x920dc4b0),   // J2D
+            Tuple.Create<UInt32, UInt32>(0x00000000, 0x00000000),   // Command
+            Tuple.Create<UInt32, UInt32>(0x80f195f0, 0x810995f0),   // Dynamic Link
+        };
         private static readonly Int32 HeapCount = 8;
 
         private static readonly Int32 HeapImageWidth = 8192;
         private static readonly Int32 HeapImageHeight = 1;
         private static readonly Int32 DPI = 72;
-
-        private static readonly int HeapCheckSize = typeof(HeapCheck).StructLayoutAttribute.Size;
 
         public enum HeapVisualizationOption
         {
@@ -52,6 +90,7 @@
             DockingViewModel.GetInstance().RegisterViewModel(this);
 
             this.HeapBitmaps = new List<WriteableBitmap>();
+            this.HeapNames = new List<String>();
             this.BlockUsage = new List<String>();
             this.MemoryUsage = new List<String>();
             this.HeapBitmapBuffers = new List<Byte[]>();
@@ -65,6 +104,7 @@
 
                     this.HeapBitmaps.Add(HeapBitmap);
                     this.HeapBitmapBuffers.Add(HeapBuffer);
+                    this.HeapNames.Add("<unknown>");
                     this.BlockUsage.Add("-");
                     this.MemoryUsage.Add("-");
                 }
@@ -280,6 +320,11 @@
         public List<Byte[]> HeapBitmapBuffers { get; private set; }
 
         /// <summary>
+        /// Gets the list of heap names.
+        /// </summary>
+        public List<String> HeapNames { get; private set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether the heap visualizer update loop can run.
         /// </summary>
         private bool CanUpdate { get; set; }
@@ -291,6 +336,44 @@
         public static HeapVisualizerViewModel GetInstance()
         {
             return HeapVisualizerViewModel.heapVisualizerViewModelInstance;
+        }
+
+        public UInt32 GetHeapTableBase()
+        {
+            return MainViewModel.GetInstance().IsWii ? HeapTableBaseWii1_0 : HeapTableBaseGc;
+        }
+
+        public Int32 GetHeapCheckSize()
+        {
+            return MainViewModel.GetInstance().IsWii ? typeof(HeapCheck).StructLayoutAttribute.Size - 4 : typeof(HeapCheck).StructLayoutAttribute.Size;
+        }
+
+        public UInt32 GetHeapStart(Int32 heapIndex)
+        {
+            heapIndex = Math.Clamp(heapIndex, 0, HeapCount - 1);
+
+            if (MainViewModel.GetInstance().IsWii)
+            {
+                return HeapsWii1_0[heapIndex].Item1;
+            }
+            else
+            {
+                return HeapsGc[heapIndex].Item1;
+            }
+        }
+
+        public UInt32 GetHeapSize(Int32 heapIndex)
+        {
+            heapIndex = Math.Clamp(heapIndex, 0, HeapCount - 1);
+
+            if (MainViewModel.GetInstance().IsWii)
+            {
+                return HeapsWii1_0[heapIndex].Item2 - this.GetHeapStart(heapIndex);
+            }
+            else
+            {
+                return HeapsGc[heapIndex].Item2 - this.GetHeapStart(heapIndex);
+            }
         }
 
         /// <summary>
@@ -335,7 +418,9 @@
                 Array.Clear(this.HeapBitmapBuffers[heapIndex], 0, this.HeapBitmapBuffers[heapIndex].Length);
             }
 
-            switch(this.SelectedHeapVisualizationOption)
+            this.ReadAndCacheHeaps();
+
+            switch (this.SelectedHeapVisualizationOption)
             {
                 case HeapVisualizationOption.CMem:
                     this.BuildHeapVisualizationsFromCMem();
@@ -358,41 +443,82 @@
             }
         }
 
-        private void BuildHeapVisualizationsFromNonZeroMemory()
+        private void ReadAndCacheHeaps()
         {
-            bool success = false;
+            Int32 heapCheckSize = this.GetHeapCheckSize();
+            bool success;
             byte[] heapTable = MemoryReader.Instance.ReadBytes(
                 SessionManager.Session.OpenedProcess,
-                MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, HeapTableBase, EmulatorType.Dolphin),
-                HeapCheckSize * HeapCount,
+                MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, GetHeapTableBase(), EmulatorType.Dolphin),
+                sizeof(UInt32) * HeapCount,
                 out success);
 
-            if (success)
+            if (!success)
             {
-                for (Int32 heapIndex = 0; heapIndex < HeapCount; heapIndex++)
+                return;
+            }
+
+            for (Int32 heapIndex = 0; heapIndex < HeapCount; heapIndex++)
+            {
+                byte[] heapPointerBytes = new byte[4];
+                Array.Copy(heapTable, heapIndex * sizeof(UInt32), heapPointerBytes, 0, sizeof(UInt32));
+
+                UInt32 heapPointer = BinaryPrimitives.ReverseEndianness(BitConverter.ToUInt32(heapPointerBytes));
+
+                byte[] heapCheckBytes = MemoryReader.Instance.ReadBytes(
+                    SessionManager.Session.OpenedProcess,
+                    MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, heapPointer, EmulatorType.Dolphin),
+                    heapCheckSize,
+                    out success);
+
+                if (!success)
                 {
-                    byte[] heapData = new byte[HeapCheckSize];
-                    Array.Copy(heapTable, heapIndex * HeapCheckSize, heapData, 0, HeapCheckSize);
-                    HeapCheck heap = HeapCheck.FromByteArray(heapData);
+                    continue;
+                }
 
-                    this.cachedHeapInfo[heapIndex] = heap;
+                HeapCheck heapCheck = HeapCheck.FromByteArray(heapCheckBytes);
+                this.cachedHeapInfo[heapIndex] = HeapCheck.FromByteArray(heapCheckBytes);
 
-                    // Arbitrary size cutoff
-                    if (heap.heapSize > 1073741824)
-                    {
-                        continue;
-                    }
+                const Int32 maxNameSize = 12;
+                byte[] heapNameBytes = MemoryReader.Instance.ReadBytes(
+                    SessionManager.Session.OpenedProcess,
+                    MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, heapCheck.mNamePointer, EmulatorType.Dolphin),
+                    maxNameSize,
+                    out success);
 
-                    byte[] fullHeapData = MemoryReader.Instance.ReadBytes(
-                        SessionManager.Session.OpenedProcess,
-                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, heap.heapPointer, EmulatorType.Dolphin),
-                        (Int32)heap.heapSize,
-                        out success);
+                Int32 nameLength = Array.IndexOf(heapNameBytes, (byte)0);
+                String newName = Encoding.UTF8.GetString(heapNameBytes, 0, nameLength <= 0 ? maxNameSize : nameLength);
 
-                    if (success)
-                    {
-                        this.ColorHeapSlotMemory(fullHeapData, heapIndex, Color.FromRgb(255, 0, 0));
-                    }
+                if (newName != this.HeapNames[heapIndex])
+                {
+                    this.HeapNames[heapIndex] = newName;
+                    this.RaisePropertyChanged(nameof(this.HeapNames));
+                }
+            }
+        }
+
+        private void BuildHeapVisualizationsFromNonZeroMemory()
+        {
+            for (Int32 heapIndex = 0; heapIndex < HeapCount; heapIndex++)
+            {
+                HeapCheck heap = this.cachedHeapInfo[heapIndex];
+
+                // Arbitrary size cutoff
+                if (heap == null || heap.heapSize > 1073741824)
+                {
+                    continue;
+                }
+
+                bool success;
+                byte[] fullHeapData = MemoryReader.Instance.ReadBytes(
+                    SessionManager.Session.OpenedProcess,
+                    MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, heap.heapPointer, EmulatorType.Dolphin),
+                    (Int32)heap.heapSize,
+                    out success);
+
+                if (success)
+                {
+                    this.ColorHeapSlotMemory(fullHeapData, heapIndex, Color.FromRgb(255, 0, 0));
                 }
             }
         }
@@ -405,44 +531,50 @@
         private void BuildActorReferenceVisualizations()
         {
             // Read the entire actor reference counting table
-            bool success = false;
+            bool success;
             byte[] actorReferenceCountTable = MemoryReader.Instance.ReadBytes(
                 SessionManager.Session.OpenedProcess,
-                MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.ActorReferenceTableBase, EmulatorType.Dolphin),
+                MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.GetActorReferenceTableSize(), EmulatorType.Dolphin),
                 ActorReferenceCountTableConstants.ActorSlotStructSize * ActorReferenceCountTableConstants.ActorReferenceCountTableMaxEntries,
                 out success);
 
             // Update new data / visual data
-            if (success)
+            if (!success)
             {
-                for (int actorSlotIndex = 0; actorSlotIndex < ActorReferenceCountTableConstants.ActorReferenceCountTableMaxEntries; actorSlotIndex++)
+                return;
+            }
+
+            for (int actorSlotIndex = 0; actorSlotIndex < ActorReferenceCountTableConstants.ActorReferenceCountTableMaxEntries; actorSlotIndex++)
+            {
+                Array.Copy(actorReferenceCountTable, actorSlotIndex * ActorReferenceCountTableConstants.ActorSlotStructSize, slotData, 0, ActorReferenceCountTableConstants.ActorSlotStructSize);
+                ActorReferenceCountTableSlot result = ActorReferenceCountTableSlot.FromByteArray(slotData, actorSlotIndex);
+
+                if (result == null)
                 {
-                    Array.Copy(actorReferenceCountTable, actorSlotIndex * ActorReferenceCountTableConstants.ActorSlotStructSize, slotData, 0, ActorReferenceCountTableConstants.ActorSlotStructSize);
-                    ActorReferenceCountTableSlot result = ActorReferenceCountTableSlot.FromByteArray(slotData, actorSlotIndex);
+                    continue;
+                }
 
-                    if (result != null)
+                Stack<UInt32> heapRefs = new Stack<UInt32>();
+
+                heapRefs.Push(result.heapPtr);
+                heapRefs.Push(result.mArchivePtr);
+                heapRefs.Push(result.mResPtrPtr);
+
+                while(heapRefs.Count > 0)
+                {
+                    UInt32 pointer = heapRefs.Pop();
+
+                    if (pointer <= 0)
                     {
-                        Stack<UInt32> heapRefs = new Stack<UInt32>();
+                        continue;
+                    }
 
-                        heapRefs.Push(result.heapPtr);
-                        heapRefs.Push(result.mArchivePtr);
-                        heapRefs.Push(result.mResPtrPtr);
-
-                        while(heapRefs.Count > 0)
+                    for (Int32 heapIndex = 0; heapIndex < HeapCount; heapIndex++)
+                    {
+                        if (this.cachedHeapInfo[heapIndex] != null && pointer >= this.cachedHeapInfo[heapIndex].heapPointer && pointer < this.cachedHeapInfo[heapIndex].heapPointer + this.cachedHeapInfo[heapIndex].heapSize)
                         {
-                            UInt32 pointer = heapRefs.Pop();
-
-                            if (pointer > 0)
-                            {
-                                for (Int32 heapIndex = 0; heapIndex < HeapCount; heapIndex++)
-                                {
-                                    if (this.cachedHeapInfo[heapIndex] != null && pointer >= this.cachedHeapInfo[heapIndex].heapPointer && pointer < this.cachedHeapInfo[heapIndex].heapPointer + this.cachedHeapInfo[heapIndex].heapSize)
-                                    {
-                                        const Int32 drawSize = 4096;
-                                        this.ColorHeapSlotMemory(pointer, drawSize, this.cachedHeapInfo[heapIndex].heapPointer, this.cachedHeapInfo[heapIndex].heapSize, heapIndex, Color.FromRgb(0, 255, 0), true);
-                                    }
-                                }
-                            }
+                            const Int32 drawSize = 4096;
+                            this.ColorHeapSlotMemory(pointer, drawSize, this.GetHeapStart(heapIndex), this.GetHeapSize(heapIndex), heapIndex, Color.FromRgb(0, 255, 0), true);
                         }
                     }
                 }
@@ -454,70 +586,66 @@
         /// </summary>
         private void BuildHeapVisualizationsFromJkrHeaps()
         {
-            bool success = false;
-            byte[] heapTable = MemoryReader.Instance.ReadBytes(
-                SessionManager.Session.OpenedProcess,
-                MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, HeapTableBase, EmulatorType.Dolphin),
-                HeapCheckSize * HeapCount,
-                out success);
-
-            if (success)
+            for (Int32 heapIndex = 0; heapIndex < HeapCount; heapIndex++)
             {
-                for (Int32 heapIndex = 0; heapIndex < HeapCount; heapIndex++)
-                {
-                    byte[] heapData = new byte[HeapCheckSize];
-                    Array.Copy(heapTable, heapIndex * HeapCheckSize, heapData, 0, HeapCheckSize);
-                    HeapCheck heap = HeapCheck.FromByteArray(heapData);
+                HeapCheck heap = this.cachedHeapInfo[heapIndex];
 
-                    byte[] jkrExpHeapData = MemoryReader.Instance.ReadBytes(
+                if (heap == null)
+                {
+                    continue;
+                }
+
+                bool success;
+                byte[] jkrExpHeapData = MemoryReader.Instance.ReadBytes(
+                    SessionManager.Session.OpenedProcess,
+                    MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, heap.heapPointer, EmulatorType.Dolphin),
+                    typeof(JKRExpHeap).StructLayoutAttribute.Size,
+                    out success);
+
+                if (!success)
+                {
+                    continue;
+                }
+
+                JKRExpHeap jkrExpHeap = JKRExpHeap.FromByteArray(jkrExpHeapData);
+                Queue<UInt32> heapPointerQueue = new Queue<UInt32>();
+
+                heapPointerQueue.Enqueue(jkrExpHeap.jkrHeapPtr);
+
+                while (heapPointerQueue.Count > 0)
+                {
+                    UInt32 nextStackPointer = heapPointerQueue.Dequeue();
+
+                    if (nextStackPointer <= 0)
+                    {
+                        continue;
+                    }
+
+                    byte[] jkrHeapData = MemoryReader.Instance.ReadBytes(
                         SessionManager.Session.OpenedProcess,
-                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, heap.heapPointer, EmulatorType.Dolphin),
-                        typeof(JKRExpHeap).StructLayoutAttribute.Size,
+                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, nextStackPointer, EmulatorType.Dolphin),
+                        typeof(JKRHeap).StructLayoutAttribute.Size,
                         out success);
 
                     if (success)
                     {
-                        JKRExpHeap jkrExpHeap = JKRExpHeap.FromByteArray(jkrExpHeapData);
-                        Queue<UInt32> heapPointerQueue = new Queue<UInt32>();
+                        JKRHeap jkrHeap = JKRHeap.FromByteArray(jkrHeapData);
 
-                        heapPointerQueue.Enqueue(jkrExpHeap.jkrHeapPtr);
+                        this.ColorHeapSlotMemory(jkrHeap.startPtr, jkrHeap.endPtr - jkrHeap.startPtr, heap.heapPointer, heap.heapSize, heapIndex, Color.FromRgb(255, 0, 0));
 
-                        while (heapPointerQueue.Count > 0)
-                        {
-                            UInt32 nextStackPointer = heapPointerQueue.Dequeue();
+                        heapPointerQueue.Enqueue(jkrHeap.childTreeLinkPtr1);
+                        heapPointerQueue.Enqueue(jkrHeap.childTreeLinkPtr2);
+                        heapPointerQueue.Enqueue(jkrHeap.childTreeLinkPtr3);
+                        heapPointerQueue.Enqueue(jkrHeap.childTreeLinkPtr4);
 
-                            if (nextStackPointer <= 0)
-                            {
-                                continue;
-                            }
+                        heapPointerQueue.Enqueue(jkrHeap.childTreeListPtr1);
+                        heapPointerQueue.Enqueue(jkrHeap.childTreeListPtr2);
+                        heapPointerQueue.Enqueue(jkrHeap.childTreeListPtr3);
 
-                            byte[] jkrHeapData = MemoryReader.Instance.ReadBytes(
-                                SessionManager.Session.OpenedProcess,
-                                MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, nextStackPointer, EmulatorType.Dolphin),
-                                typeof(JKRHeap).StructLayoutAttribute.Size,
-                                out success);
-
-                            if (success)
-                            {
-                                JKRHeap jkrHeap = JKRHeap.FromByteArray(jkrHeapData);
-
-                                this.ColorHeapSlotMemory(jkrHeap.startPtr, jkrHeap.endPtr - jkrHeap.startPtr, heap.heapPointer, heap.heapSize, heapIndex, Color.FromRgb(255, 0, 0));
-
-                                heapPointerQueue.Enqueue(jkrHeap.childTreeLinkPtr1);
-                                heapPointerQueue.Enqueue(jkrHeap.childTreeLinkPtr2);
-                                heapPointerQueue.Enqueue(jkrHeap.childTreeLinkPtr3);
-                                heapPointerQueue.Enqueue(jkrHeap.childTreeLinkPtr4);
-
-                                heapPointerQueue.Enqueue(jkrHeap.childTreeListPtr1);
-                                heapPointerQueue.Enqueue(jkrHeap.childTreeListPtr2);
-                                heapPointerQueue.Enqueue(jkrHeap.childTreeListPtr3);
-
-                                heapPointerQueue.Enqueue(jkrHeap.jsuPtrLink1);
-                                heapPointerQueue.Enqueue(jkrHeap.jsuPtrLink2);
-                                heapPointerQueue.Enqueue(jkrHeap.jsuPtrLink3);
-                                heapPointerQueue.Enqueue(jkrHeap.jsuPtrLink4);
-                            }
-                        }
+                        heapPointerQueue.Enqueue(jkrHeap.jsuPtrLink1);
+                        heapPointerQueue.Enqueue(jkrHeap.jsuPtrLink2);
+                        heapPointerQueue.Enqueue(jkrHeap.jsuPtrLink3);
+                        heapPointerQueue.Enqueue(jkrHeap.jsuPtrLink4);
                     }
                 }
             }
@@ -525,103 +653,111 @@
 
         private void BuildHeapVisualizationsFromCMem()
         {
-            bool success = false;
-            byte[] heapTable = MemoryReader.Instance.ReadBytes(
-                SessionManager.Session.OpenedProcess,
-                MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, HeapTableBase, EmulatorType.Dolphin),
-                HeapCheckSize * HeapCount,
-                out success);
-
-            if (success)
+            for (Int32 heapIndex = 0; heapIndex < HeapCount; heapIndex++)
             {
-                for (Int32 heapIndex = 0; heapIndex < HeapCount; heapIndex++)
+                HeapCheck heap = this.cachedHeapInfo[heapIndex];
+
+                if (heap == null)
                 {
-                    byte[] heapData = new byte[HeapCheckSize];
-                    Array.Copy(heapTable, heapIndex * HeapCheckSize, heapData, 0, HeapCheckSize);
-                    HeapCheck heap = HeapCheck.FromByteArray(heapData);
+                    continue;
+                }
 
-                    this.cachedHeapInfo[heapIndex] = heap;
+                bool success;
+                byte[] jkrExpHeapData = MemoryReader.Instance.ReadBytes(
+                    SessionManager.Session.OpenedProcess,
+                    MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, heap.heapPointer, EmulatorType.Dolphin),
+                    typeof(JKRExpHeap).StructLayoutAttribute.Size,
+                    out success);
 
-                    byte[] jkrExpHeapData = MemoryReader.Instance.ReadBytes(
-                        SessionManager.Session.OpenedProcess,
-                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, heap.heapPointer, EmulatorType.Dolphin),
-                        typeof(JKRExpHeap).StructLayoutAttribute.Size,
-                        out success);
+                if (success)
+                {
+                    JKRExpHeap jkrExpHeap = JKRExpHeap.FromByteArray(jkrExpHeapData);
 
-                    if (success)
+                    UInt32 usedMemory = 0;
+                    UInt32 freeMemory = 0;
+                    UInt32 usedBlocks = 0;
+                    UInt32 freeBlocks = 0;
+
+                    UInt32 nextCMemBlockPtr = jkrExpHeap.usedBlocksHeadPtr;
+                    HashSet<UInt32> CycleDetect = new HashSet<UInt32>();
+                    while (nextCMemBlockPtr > 0)
                     {
-                        JKRExpHeap jkrExpHeap = JKRExpHeap.FromByteArray(jkrExpHeapData);
-
-                        UInt32 usedMemory = 0;
-                        UInt32 freeMemory = 0;
-                        UInt32 usedBlocks = 0;
-                        UInt32 freeBlocks = 0;
-
-                        UInt32 nextCMemBlockPtr = jkrExpHeap.usedBlocksHeadPtr;
-                        while (nextCMemBlockPtr > 0)
+                        if (CycleDetect.Contains(nextCMemBlockPtr))
                         {
-                            byte[] cMemBlockData = MemoryReader.Instance.ReadBytes(
-                                SessionManager.Session.OpenedProcess,
-                                MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, nextCMemBlockPtr, EmulatorType.Dolphin),
-                                typeof(CMemBlock).StructLayoutAttribute.Size,
-                                out success);
-
-                            if (success)
-                            {
-                                CMemBlock cMemBlock = CMemBlock.FromByteArray(cMemBlockData);
-                                usedBlocks++;
-                                usedMemory += cMemBlock.blockSize;
-                                nextCMemBlockPtr = cMemBlock.nextPtr;
-
-                                // Color used memory
-                                this.ColorHeapSlotMemory(nextCMemBlockPtr, cMemBlock.blockSize, heap.heapPointer, heap.heapSize, heapIndex, Color.FromRgb(255, 0, 0));
-                            }
+                            break;
                         }
 
-                        nextCMemBlockPtr = jkrExpHeap.freeBlocksHeadPtr;
-                        while (nextCMemBlockPtr > 0)
+                        CycleDetect.Add(nextCMemBlockPtr);
+
+                        byte[] cMemBlockData = MemoryReader.Instance.ReadBytes(
+                            SessionManager.Session.OpenedProcess,
+                            MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, nextCMemBlockPtr, EmulatorType.Dolphin),
+                            typeof(CMemBlock).StructLayoutAttribute.Size,
+                            out success);
+
+                        if (success)
                         {
-                            byte[] cMemBlockData = MemoryReader.Instance.ReadBytes(
-                                SessionManager.Session.OpenedProcess,
-                                MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, nextCMemBlockPtr, EmulatorType.Dolphin),
-                                typeof(CMemBlock).StructLayoutAttribute.Size,
-                                out success);
+                            CMemBlock cMemBlock = CMemBlock.FromByteArray(cMemBlockData);
+                            usedBlocks++;
+                            usedMemory += cMemBlock.blockSize;
+                            nextCMemBlockPtr = cMemBlock.nextPtr;
 
-                            if (success)
-                            {
-                                CMemBlock cMemBlock = CMemBlock.FromByteArray(cMemBlockData);
-                                freeBlocks++;
-                                freeMemory += cMemBlock.blockSize;
-                                nextCMemBlockPtr = cMemBlock.nextPtr;
+                            // Color used memory
+                            this.ColorHeapSlotMemory(nextCMemBlockPtr, cMemBlock.blockSize, this.GetHeapStart(heapIndex), this.GetHeapSize(heapIndex), heapIndex, Color.FromRgb(255, 0, 0));
+                        }
+                    }
 
-                                this.ColorHeapSlotMemory(nextCMemBlockPtr, cMemBlock.blockSize, heap.heapPointer, heap.heapSize, heapIndex, Color.FromRgb(0, 0, 255));
-                            }
+                    CycleDetect.Clear();
+                    nextCMemBlockPtr = jkrExpHeap.freeBlocksHeadPtr;
+                    while (nextCMemBlockPtr > 0)
+                    {
+                        if (CycleDetect.Contains(nextCMemBlockPtr))
+                        {
+                            break;
                         }
 
-                        String blockUsage = String.Format("Blocks: {0} / {1}", usedBlocks, usedBlocks + freeBlocks);
-                        String memoryUsage;
+                        CycleDetect.Add(nextCMemBlockPtr);
 
-                        if (usedMemory + freeMemory < 65535)
+                        byte[] cMemBlockData = MemoryReader.Instance.ReadBytes(
+                            SessionManager.Session.OpenedProcess,
+                            MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, nextCMemBlockPtr, EmulatorType.Dolphin),
+                            typeof(CMemBlock).StructLayoutAttribute.Size,
+                            out success);
+
+                        if (success)
                         {
-                            memoryUsage = String.Format("Mem (b): {0} / {1} (b)", usedMemory, heap.heapSize); // usedMemory + freeMemory
+                            CMemBlock cMemBlock = CMemBlock.FromByteArray(cMemBlockData);
+                            freeBlocks++;
+                            freeMemory += cMemBlock.blockSize;
+                            nextCMemBlockPtr = cMemBlock.nextPtr;
+
+                            this.ColorHeapSlotMemory(nextCMemBlockPtr, cMemBlock.blockSize, this.GetHeapStart(heapIndex), this.GetHeapSize(heapIndex), heapIndex, Color.FromRgb(0, 0, 255));
                         }
-                        else
-                        {
-                            memoryUsage = String.Format("Mem: {0} / {1} (kb)", usedMemory / 1024, (heap.heapSize) / 1024);
-                        }
+                    }
+
+                    String blockUsage = String.Format("Blocks: {0} / {1}", usedBlocks, usedBlocks + freeBlocks);
+                    String memoryUsage;
+
+                    if (usedMemory + freeMemory < 65535)
+                    {
+                        memoryUsage = String.Format("Mem (b): {0} / {1} (b)", usedMemory, heap.heapSize); // usedMemory + freeMemory
+                    }
+                    else
+                    {
+                        memoryUsage = String.Format("Mem: {0} / {1} (kb)", usedMemory / 1024, (heap.heapSize) / 1024);
+                    }
 
 
-                        if (blockUsage != this.BlockUsage[heapIndex])
-                        {
-                            this.BlockUsage[heapIndex] = blockUsage;
-                            this.RaisePropertyChanged(nameof(this.BlockUsage));
-                        }
+                    if (blockUsage != this.BlockUsage[heapIndex])
+                    {
+                        this.BlockUsage[heapIndex] = blockUsage;
+                        this.RaisePropertyChanged(nameof(this.BlockUsage));
+                    }
 
-                        if (memoryUsage != this.MemoryUsage[heapIndex])
-                        {
-                            this.MemoryUsage[heapIndex] = memoryUsage;
-                            this.RaisePropertyChanged(nameof(this.MemoryUsage));
-                        }
+                    if (memoryUsage != this.MemoryUsage[heapIndex])
+                    {
+                        this.MemoryUsage[heapIndex] = memoryUsage;
+                        this.RaisePropertyChanged(nameof(this.MemoryUsage));
                     }
                 }
             }
@@ -664,6 +800,11 @@
 
         private void ColorHeapSlotMemory(UInt32 startAddress, UInt32 dataSize, UInt32 heapStartAddress, UInt32 heapSize, Int32 heapIndex, Color color, bool overWrite = false)
         {
+            if (heapSize == 0)
+            {
+                return;
+            }
+
             Int32 bytesPerPixel = this.HeapBitmaps[heapIndex].Format.BitsPerPixel / 8;
             UInt32 offset = startAddress - heapStartAddress;
             Int32 pixelStart = (Int32)((double)offset * (double)HeapImageWidth / (double)heapSize);

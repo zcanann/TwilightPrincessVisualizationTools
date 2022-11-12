@@ -118,5 +118,17 @@ namespace Twilight.Properties {
                 this["ShowHeap7"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool IsWii {
+            get {
+                return ((bool)(this["IsWii"]));
+            }
+            set {
+                this["IsWii"] = value;
+            }
+        }
     }
 }

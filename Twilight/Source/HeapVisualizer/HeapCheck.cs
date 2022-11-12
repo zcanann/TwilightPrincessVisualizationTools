@@ -5,7 +5,6 @@ namespace Twilight.Source.HeapVisualizer
     using System.Buffers.Binary;
     using System.Runtime.InteropServices;
 
-
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 0x28)]
     public class HeapCheck
     {
@@ -41,6 +40,17 @@ namespace Twilight.Source.HeapVisualizer
 
         public static HeapCheck FromByteArray(byte[] bytes)
         {
+            // Convert Wii structure to GC. jNamePointer field is missing, so we shift all the bytes down and leave that as nullptr.
+            if (bytes.Length == 0x24)
+            {
+                byte[] newBytes = new byte[0x28];
+
+                Array.Copy(bytes, newBytes, 0x4);
+                Array.Copy(bytes, 0x4, newBytes, 0x8, 0x20);
+
+                bytes = newBytes;
+            }
+
             GCHandle handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
             try
             {
@@ -48,7 +58,6 @@ namespace Twilight.Source.HeapVisualizer
 
                 // Fix GC endianness
                 result.mNamePointer = BinaryPrimitives.ReverseEndianness(result.mNamePointer);
-                result.jNamePointer = BinaryPrimitives.ReverseEndianness(result.jNamePointer);
                 result.heapPointer = BinaryPrimitives.ReverseEndianness(result.heapPointer);
                 result.maxTotalUsedSize = BinaryPrimitives.ReverseEndianness(result.maxTotalUsedSize);
                 result.maxTotalFreeSize = BinaryPrimitives.ReverseEndianness(result.maxTotalFreeSize);

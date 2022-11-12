@@ -1,15 +1,13 @@
 ﻿namespace Twilight.Source.Main
 {
-    using Twilight.Engine.Common.Logging;
-    using Twilight.Engine.Common.OS;
-    using Twilight.Source.Docking;
-    using Twilight.Source.HeapVisualizer;
-    using Twilight.Source.Output;
     using System;
     using System.Numerics;
     using System.Threading;
     using System.Windows;
-    using System.Windows.Input;
+    using Twilight.Engine.Common.Logging;
+    using Twilight.Engine.Common.OS;
+    using Twilight.Source.Docking;
+    using Twilight.Source.Output;
 
     /// <summary>
     /// Main view model.
@@ -48,6 +46,24 @@
         /// The save file for the docking layout.
         /// </summary>
         protected override String LayoutSaveFile { get { return "Layout.xml"; } }
+
+        /// <summary>
+        /// Gets or sets the target platform.
+        /// </summary>
+        public Boolean IsWii
+        {
+            get
+            {
+                return Properties.Settings.Default.IsWii;
+            }
+
+            set
+            {
+                Properties.Settings.Default.IsWii = value;
+                Properties.Settings.Default.Save();
+                this.RaisePropertyChanged(nameof(this.IsWii));
+            }
+        }
 
         /// <summary>
         /// Gets the singleton instance of the <see cref="MainViewModel" /> class.

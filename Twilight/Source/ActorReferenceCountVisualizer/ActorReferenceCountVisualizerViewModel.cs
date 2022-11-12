@@ -131,7 +131,7 @@
             bool success = false;
             byte[] actorReferenceCountTable = MemoryReader.Instance.ReadBytes(
                 SessionManager.Session.OpenedProcess,
-                MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.ActorReferenceTableBase, EmulatorType.Dolphin),
+                MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.GetActorReferenceTableSize(), EmulatorType.Dolphin),
                 ActorReferenceCountTableConstants.ActorSlotStructSize * ActorReferenceCountTableConstants.ActorReferenceCountTableMaxEntries,
                 out success);
 
@@ -149,6 +149,8 @@
                     // Copy data over field by field to avoid triggering the FullyObservableCollection changes.
                     if (result != null)
                     {
+                        this.ActorReferenceCountSlots[actorSlotIndex].Slot.ActorSlotIndex = actorSlotIndex;
+
                         // Avoid calling setters to bypass the write-back to Dolphin memory
                         this.ActorReferenceCountSlots[actorSlotIndex].Slot.name = Encoding.ASCII.GetBytes(result.Name);
                         this.ActorReferenceCountSlots[actorSlotIndex].Slot.referenceCount = result.ReferenceCount;

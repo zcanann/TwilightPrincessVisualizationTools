@@ -74,49 +74,49 @@
                     <ComboBoxItem>
                     <WrapPanel>
                         <CheckBox Padding="0,0,4,0" IsChecked="{Binding ShowHeap0, Mode=TwoWay}" />
-                        <TextBlock VerticalAlignment="Center" Text="Root Heap" />
+                        <TextBlock VerticalAlignment="Center" Text="Heap 0 (Root)" />
                     </WrapPanel>
                 </ComboBoxItem>
                 <ComboBoxItem>
                     <WrapPanel>
                         <CheckBox IsHitTestVisible="True" Padding="0,0,4,0" IsChecked="{Binding ShowHeap1, Mode=TwoWay}" />
-                        <TextBlock VerticalAlignment="Center" Text="System Heap" />
+                        <TextBlock VerticalAlignment="Center" Text="Heap 1 (System)" />
                     </WrapPanel>
                 </ComboBoxItem>
                 <ComboBoxItem>
                     <WrapPanel>
                         <CheckBox Padding="0,0,4,0" IsChecked="{Binding ShowHeap2, Mode=TwoWay}" />
-                        <TextBlock VerticalAlignment="Center" Text="Zelda Heap (DYN)" />
+                        <TextBlock VerticalAlignment="Center" Text="Heap 2 (Zelda (DYN))" />
                     </WrapPanel>
                 </ComboBoxItem>
                 <ComboBoxItem>
                     <WrapPanel>
                         <CheckBox Padding="0,0,4,0" IsChecked="{Binding ShowHeap3, Mode=TwoWay}" />
-                        <TextBlock VerticalAlignment="Center" Text="Game Heap (GAME)" />
+                        <TextBlock VerticalAlignment="Center" Text="Heap 3 (Game (GAME))" />
                     </WrapPanel>
                 </ComboBoxItem>
                 <ComboBoxItem>
                     <WrapPanel>
                         <CheckBox Padding="0,0,4,0" IsChecked="{Binding ShowHeap4, Mode=TwoWay}" />
-                        <TextBlock VerticalAlignment="Center" Text="Archive Heap (ACT)" />
+                        <TextBlock VerticalAlignment="Center" Text="Heap 4 (Archive (ACT))" />
                     </WrapPanel>
                 </ComboBoxItem>
                 <ComboBoxItem>
                     <WrapPanel>
                         <CheckBox Padding="0,0,4,0" IsChecked="{Binding ShowHeap5, Mode=TwoWay}" />
-                        <TextBlock VerticalAlignment="Center" Text="J2D Heap" />
+                        <TextBlock VerticalAlignment="Center" Text="Heap 5 (J2D)" />
                     </WrapPanel>
                 </ComboBoxItem>
                 <ComboBoxItem>
                     <WrapPanel>
                         <CheckBox Padding="0,0,4,0" IsChecked="{Binding ShowHeap6, Mode=TwoWay}" />
-                        <TextBlock VerticalAlignment="Center" Text="Host IO Heap" />
+                        <TextBlock VerticalAlignment="Center" Text="Heap 6 (Host IO on GC, Command on Wii)" />
                     </WrapPanel>
                 </ComboBoxItem>
                 <ComboBoxItem>
                     <WrapPanel>
                         <CheckBox Padding="0,0,4,0" IsChecked="{Binding ShowHeap7, Mode=TwoWay}" />
-                        <TextBlock VerticalAlignment="Center" Text="Command Heap" />
+                        <TextBlock VerticalAlignment="Center" Text="Heap 7 (Command on GC, ?? on Wii)" />
                     </WrapPanel>
                 </ComboBoxItem>
             </ComboBox>
@@ -206,7 +206,7 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Margin="8" Width="160">
-                    <TextBlock Foreground="White">Root Heap</TextBlock>
+                    <TextBlock Foreground="White" Text="{Binding Path=HeapNames[0]}"/>
                     <TextBlock Foreground="White" Text="{Binding Path=BlockUsage[0]}"/>
                     <TextBlock Foreground="White" Text="{Binding Path=MemoryUsage[0]}"/>
                 </StackPanel>
@@ -219,7 +219,7 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Margin="8" Width="160">
-                    <TextBlock Foreground="White">System Heap</TextBlock>
+                    <TextBlock Foreground="White" Text="{Binding Path=HeapNames[1]}"/>
                     <TextBlock Foreground="White" Text="{Binding Path=BlockUsage[1]}"/>
                     <TextBlock Foreground="White" Text="{Binding Path=MemoryUsage[1]}"/>
                 </StackPanel>
@@ -232,7 +232,7 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Margin="8">
-                    <TextBlock Foreground="White">Zelda Heap (DYN)</TextBlock>
+                    <TextBlock Foreground="White" Text="{Binding Path=HeapNames[2]}"/>
                     <TextBlock Foreground="White" Text="{Binding Path=BlockUsage[2]}"/>
                     <TextBlock Foreground="White" Text="{Binding Path=MemoryUsage[2]}"/>
                 </StackPanel>
@@ -245,7 +245,7 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Margin="8" Width="160">
-                    <TextBlock Foreground="White">Game Heap (GAME)</TextBlock>
+                    <TextBlock Foreground="White" Text="{Binding Path=HeapNames[3]}"/>
                     <TextBlock Foreground="White" Text="{Binding Path=BlockUsage[3]}"/>
                     <TextBlock Foreground="White" Text="{Binding Path=MemoryUsage[3]}"/>
                 </StackPanel>
@@ -258,7 +258,7 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Row="3" Margin="8">
-                    <TextBlock Foreground="White">Archive Heap (ACT)</TextBlock>
+                    <TextBlock Foreground="White" Text="{Binding Path=HeapNames[4]}"/>
                     <TextBlock Foreground="White" Text="{Binding Path=BlockUsage[4]}"/>
                     <TextBlock Foreground="White" Text="{Binding Path=MemoryUsage[4]}"/>
                 </StackPanel>
@@ -271,7 +271,7 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Row="4" Margin="8">
-                    <TextBlock Foreground="White">J2D Heap</TextBlock>
+                    <TextBlock Foreground="White" Text="{Binding Path=HeapNames[5]}"/>
                     <TextBlock Foreground="White" Text="{Binding Path=BlockUsage[5]}"/>
                     <TextBlock Foreground="White" Text="{Binding Path=MemoryUsage[5]}"/>
                 </StackPanel>
@@ -284,7 +284,7 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Row="6" Margin="8">
-                    <TextBlock Foreground="White">Host IO Heap</TextBlock>
+                    <TextBlock Foreground="White" Text="{Binding Path=HeapNames[6]}"/>
                     <TextBlock Foreground="White" Text="{Binding Path=BlockUsage[6]}"/>
                     <TextBlock Foreground="White" Text="{Binding Path=MemoryUsage[6]}"/>
                 </StackPanel>
@@ -297,7 +297,7 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Row="7" Margin="8">
-                    <TextBlock Foreground="White">Command Heap</TextBlock>
+                    <TextBlock Foreground="White" Text="{Binding Path=HeapNames[7]}"/>
                     <TextBlock Foreground="White" Text="{Binding Path=BlockUsage[7]}"/>
                     <TextBlock Foreground="White" Text="{Binding Path=MemoryUsage[7]}"/>
                 </StackPanel>

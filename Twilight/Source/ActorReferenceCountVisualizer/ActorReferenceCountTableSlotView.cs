@@ -43,7 +43,7 @@ namespace Twilight.Source.ActorReferenceCountVisualizer
                     this.RaisePropertyChanged(nameof(this.Name));
                     MemoryWriter.Instance.WriteBytes(
                         SessionManager.Session.OpenedProcess,
-                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.ActorReferenceTableBase + (UInt64)this.Slot.ActorSlotIndex * 0x24, EmulatorType.Dolphin),
+                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.GetActorReferenceTableSize() + (UInt64)this.Slot.ActorSlotIndex * 0x24, EmulatorType.Dolphin),
                         data
                     );
                 }
@@ -65,7 +65,7 @@ namespace Twilight.Source.ActorReferenceCountVisualizer
                     this.RaisePropertyChanged(nameof(this.ReferenceCount));
                     MemoryWriter.Instance.Write<UInt16>(
                         SessionManager.Session.OpenedProcess,
-                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.ActorReferenceTableBase + 0xC + (UInt64)this.Slot.ActorSlotIndex * 0x24, EmulatorType.Dolphin),
+                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.GetActorReferenceTableSize() + 0xC + (UInt64)this.Slot.ActorSlotIndex * 0x24, EmulatorType.Dolphin),
                         BinaryPrimitives.ReverseEndianness(value)
                     );
                 }
@@ -104,7 +104,7 @@ namespace Twilight.Source.ActorReferenceCountVisualizer
                     this.RaisePropertyChanged(nameof(this.MDMCommandPtr));
                     MemoryWriter.Instance.Write<UInt32>(
                         SessionManager.Session.OpenedProcess,
-                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.ActorReferenceTableBase + 0x10 + (UInt64)this.Slot.ActorSlotIndex * 0x24, EmulatorType.Dolphin),
+                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.GetActorReferenceTableSize() + 0x10 + (UInt64)this.Slot.ActorSlotIndex * 0x24, EmulatorType.Dolphin),
                         BinaryPrimitives.ReverseEndianness(value)
                     );
                 }
@@ -126,7 +126,7 @@ namespace Twilight.Source.ActorReferenceCountVisualizer
                     this.RaisePropertyChanged(nameof(this.MArchivePtr));
                     MemoryWriter.Instance.Write<UInt32>(
                         SessionManager.Session.OpenedProcess,
-                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.ActorReferenceTableBase + 0x14 + (UInt64)this.Slot.ActorSlotIndex * 0x24, EmulatorType.Dolphin),
+                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.GetActorReferenceTableSize() + 0x14 + (UInt64)this.Slot.ActorSlotIndex * 0x24, EmulatorType.Dolphin),
                         BinaryPrimitives.ReverseEndianness(value)
                     );
                 }
@@ -148,7 +148,7 @@ namespace Twilight.Source.ActorReferenceCountVisualizer
                     this.RaisePropertyChanged(nameof(this.HeapPtr));
                     MemoryWriter.Instance.Write<UInt32>(
                         SessionManager.Session.OpenedProcess,
-                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.ActorReferenceTableBase + 0x18 + (UInt64)this.Slot.ActorSlotIndex * 0x24, EmulatorType.Dolphin),
+                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.GetActorReferenceTableSize() + 0x18 + (UInt64)this.Slot.ActorSlotIndex * 0x24, EmulatorType.Dolphin),
                         BinaryPrimitives.ReverseEndianness(value)
                     );
                 }
@@ -170,7 +170,7 @@ namespace Twilight.Source.ActorReferenceCountVisualizer
                     this.RaisePropertyChanged(nameof(this.MDataHeapPtr));
                     MemoryWriter.Instance.Write<UInt32>(
                         SessionManager.Session.OpenedProcess,
-                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.ActorReferenceTableBase + 0x1C + (UInt64)this.Slot.ActorSlotIndex * 0x24, EmulatorType.Dolphin),
+                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.GetActorReferenceTableSize() + 0x1C + (UInt64)this.Slot.ActorSlotIndex * 0x24, EmulatorType.Dolphin),
                         BinaryPrimitives.ReverseEndianness(value)
                     );
                 }
@@ -192,7 +192,7 @@ namespace Twilight.Source.ActorReferenceCountVisualizer
                     this.RaisePropertyChanged(nameof(this.MResPtrPtr));
                     MemoryWriter.Instance.Write<UInt32>(
                         SessionManager.Session.OpenedProcess,
-                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.ActorReferenceTableBase + 0x20 + (UInt64)this.Slot.ActorSlotIndex * 0x24, EmulatorType.Dolphin),
+                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.GetActorReferenceTableSize() + 0x20 + (UInt64)this.Slot.ActorSlotIndex * 0x24, EmulatorType.Dolphin),
                         BinaryPrimitives.ReverseEndianness(value)
                     );
                 }

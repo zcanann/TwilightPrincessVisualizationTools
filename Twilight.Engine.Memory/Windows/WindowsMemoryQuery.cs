@@ -611,7 +611,6 @@
             {
                 case EmulatorType.Dolphin:
                     IEnumerable<NormalizedRegion> mappedRegions = this.GetVirtualPages(process, 0, 0, MemoryTypeEnum.Mapped, 0, this.GetMaximumAddress(process));
-                    IEnumerable<NormalizedRegion> privateRegions = this.GetVirtualPages(process, 0, 0, MemoryTypeEnum.Private, 0, this.GetMaximumAddress(process));
 
                     foreach (NormalizedRegion region in mappedRegions)
                     {
@@ -626,7 +625,7 @@
                             {
                                 String gameIdStr = Encoding.ASCII.GetString(gameId);
 
-                                if (gameIdStr.StartsWith('G') && gameIdStr.All(character => Char.IsLetterOrDigit(character)))
+                                if ((gameIdStr.StartsWith('G') || gameIdStr.StartsWith('R')) && gameIdStr.All(character => Char.IsLetterOrDigit(character)))
                                 {
                                     // Oddly Dolphin seems to map multiple main memory regions into RAM. These are identical.
                                     // Changing values in one will change the other. This means that we can just take the first one we find.
@@ -637,17 +636,34 @@
                         }
                     }
 
-                    // Disabled for now: Fetching Wii extended memory. We should find a consistent signature for this.
-                    /*
-                    foreach (NormalizedRegion region in privateRegions)
+                    bool mem2Found = false;
+                    foreach (NormalizedRegion region in mappedRegions)
                     {
                         // Dolphin stores wii memory in a memory mapped region of this exact size.
                         if (region.RegionSize == 0x4000000 && IsRegionBackedByPhysicalMemory(processHandle, region))
                         {
                             regions.Add(region);
+                            mem2Found = true;
                             break;
                         }
-                    }*/
+                    }
+
+                    // Try private regions if mapped didn't contain mem2
+                    if (!mem2Found)
+                    {
+                        IEnumerable<NormalizedRegion> privateRegions = this.GetVirtualPages(process, 0, 0, MemoryTypeEnum.Private, 0, this.GetMaximumAddress(process));
+
+                        foreach (NormalizedRegion region in privateRegions)
+                        {
+                            // Dolphin stores wii memory in a memory mapped region of this exact size.
+                            if (region.RegionSize == 0x4000000 && IsRegionBackedByPhysicalMemory(processHandle, region))
+                            {
+                                regions.Add(region);
+                                mem2Found = true;
+                                break;
+                            }
+                        }
+                    }
                     break;
                 default:
                     break;
@@ -655,7 +671,7 @@
 
             if (regions.Count > 0)
             {
-            this.DolphinRegionCache.Add(regions);
+                this.DolphinRegionCache.Add(regions);
             }
 
             return regions;
