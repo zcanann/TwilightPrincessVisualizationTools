@@ -740,11 +740,11 @@
 
                     if (usedMemory + freeMemory < 65535)
                     {
-                        memoryUsage = String.Format("Mem (b): {0} / {1} (b)", usedMemory, heap.heapSize); // usedMemory + freeMemory
+                        memoryUsage = String.Format("Mem (b): {0} / {1} (b)", usedMemory, this.GetHeapSize(heapIndex)); // usedMemory + freeMemory
                     }
                     else
                     {
-                        memoryUsage = String.Format("Mem: {0} / {1} (kb)", usedMemory / 1024, (heap.heapSize) / 1024);
+                        memoryUsage = String.Format("Mem: {0} / {1} (kb)", usedMemory / 1024, this.GetHeapSize(heapIndex) / 1024);
                     }
 
 
