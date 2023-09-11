@@ -173,8 +173,7 @@
 
                 for (int actorSlotIndex = 0; actorSlotIndex < ActorReferenceCountTableConstants.ActorReferenceCountTableMaxEntries; actorSlotIndex++)
                 {
-                    // TODO: Fixme
-                    // this.ColorActorSlotMemory(actorSlotIndex, this.ActorReferenceCountSlots[actorSlotIndex].ReferenceCount > 0 ? Color.FromRgb(255, 0, 0) : Color.FromRgb(0, 0, 0));
+                    this.ColorActorSlotMemory(actorSlotIndex, this.ActorSlotsTable.RawActorSlots[actorSlotIndex].ReferenceCount > 0 ? Color.FromRgb(255, 0, 0) : Color.FromRgb(0, 0, 0));
                 }
             }
 
