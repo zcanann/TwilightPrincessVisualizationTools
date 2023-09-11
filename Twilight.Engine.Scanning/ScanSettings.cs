@@ -96,29 +96,16 @@
             }
         }
 
-        public static Int32 InputCorrelatorTimeOutInterval
+        public static MemoryAlignment Alignment
         {
             get
             {
-                return Properties.Settings.Default.InputCorrelatorTimeOutInterval;
+                return (MemoryAlignment)Properties.Settings.Default.Alignment;
             }
 
             set
             {
-                Properties.Settings.Default.InputCorrelatorTimeOutInterval = value;
-            }
-        }
-
-        public static Int32 Alignment
-        {
-            get
-            {
-                return Properties.Settings.Default.Alignment;
-            }
-
-            set
-            {
-                Properties.Settings.Default.Alignment = value;
+                Properties.Settings.Default.Alignment = (int)value;
             }
         }
 
@@ -264,7 +251,26 @@
                 Properties.Settings.Default.EmulatorType = (int)value;
             }
         }
+
+        public static Boolean UseMultiThreadScans
+        {
+            get
+            {
+                return Properties.Settings.Default.UseMultiThreadScans;
+            }
+
+            set
+            {
+                Properties.Settings.Default.UseMultiThreadScans = value;
+            }
+        }
+
+        public static MemoryAlignment ResolveAutoAlignment(MemoryAlignment alignment, Int32 dataTypeSize)
+        {
+            return alignment == MemoryAlignment.Auto ? (MemoryAlignment)dataTypeSize : alignment;
+        }
     }
     //// End class
 }
 //// End namespace
+///

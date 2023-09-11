@@ -8,6 +8,9 @@
     using System.Diagnostics;
     using System.Linq;
 
+    /// <summary>
+    /// A static class for querying snapshots of memory from a target process.
+    /// </summary>
     public static class SnapshotQuery
     {
         [Flags]
@@ -21,16 +24,13 @@
         }
 
         /// <summary>
-        /// The size by which to shard read groups. This allows for balanced workloads for parallelized scans.
-        /// Value arbitrarily chosen by testing against a large game with Twilight compiled in Release mode.
-        /// </summary>
-        private static readonly Int32 ShardSize = 1 << 22;
-
-        /// <summary>
         /// Gets a snapshot based on the provided mode. Will not read any memory.
         /// </summary>
+        /// <param name="process"></param>
         /// <param name="snapshotCreationMode">The method of snapshot retrieval.</param>
+        /// <param name="emulatorType"></param>
         /// <returns>The collected snapshot.</returns>
+        /// <exception cref="NotImplementedException"></exception>
         public static Snapshot GetSnapshot(Process process, SnapshotRetrievalMode snapshotCreationMode, EmulatorType emulatorType = EmulatorType.None)
         {
             switch (snapshotCreationMode)
@@ -40,9 +40,9 @@
                 case SnapshotRetrievalMode.FromUserModeMemory:
                     return SnapshotQuery.CreateSnapshotFromUsermodeMemory(process);
                 case SnapshotRetrievalMode.FromModules:
-                    return SnapshotQuery.CreateSnapshotFromModules(process);
+                    return SnapshotQuery.CreateSnapshotFromModules(process, emulatorType);
                 case SnapshotRetrievalMode.FromHeaps:
-                    return SnapshotQuery.CreateSnapshotFromHeaps(process);
+                    return SnapshotQuery.CreateSnapshotFromHeaps(process, emulatorType);
                 case SnapshotRetrievalMode.FromStack:
                     throw new NotImplementedException();
                 default:
@@ -52,8 +52,41 @@
         }
 
         /// <summary>
+        /// Creates a new snapshot of memory in the target process. Will not read any memory.
+        /// </summary>
+        /// <param name="process"></param>
+        /// <param name="startAddress"></param>
+        /// <param name="endAddress"></param>
+        /// <returns>The snapshot of memory taken in the target process.</returns>
+        public static Snapshot CreateSnapshotByAddressRange(Process process, UInt64 startAddress, UInt64 endAddress)
+        {
+            MemoryProtectionEnum requiredPageFlags = 0;
+            MemoryProtectionEnum excludedPageFlags = 0;
+            MemoryTypeEnum allowedTypeFlags = MemoryTypeEnum.None | MemoryTypeEnum.Private | MemoryTypeEnum.Image | MemoryTypeEnum.Mapped;
+            RegionBoundsHandling boundsHandling = RegionBoundsHandling.Resize;
+
+            IEnumerable<SnapshotRegion> snapshotRegions = MemoryQueryer.Instance.GetVirtualPages<SnapshotRegion>(
+                process,
+                requiredPageFlags,
+                excludedPageFlags,
+                allowedTypeFlags,
+                startAddress,
+                endAddress,
+                boundsHandling);
+
+            foreach (SnapshotRegion snapshotRegion in snapshotRegions)
+            {
+                snapshotRegion.Align(ScanSettings.Alignment);
+            }
+
+            // Convert to an array to force immediate evaluation of the IEnumerable, which normally does lazy evaluation.
+            return new Snapshot(String.Empty, snapshotRegions?.ToArray());
+        }
+
+        /// <summary>
         /// Creates a snapshot from all usermode memory. Will not read any memory.
         /// </summary>
+        /// <param name="process"></param>
         /// <returns>A snapshot created from usermode memory.</returns>
         private static Snapshot CreateSnapshotFromUsermodeMemory(Process process)
         {
@@ -64,8 +97,7 @@
             UInt64 startAddress = 0;
             UInt64 endAddress = MemoryQueryer.Instance.GetMaxUsermodeAddress(process);
 
-            List<ReadGroup> readGroups = new List<ReadGroup>();
-            IEnumerable<NormalizedRegion> virtualPages = MemoryQueryer.Instance.GetVirtualPages(
+            IEnumerable<SnapshotRegion> snapshotRegions = MemoryQueryer.Instance.GetVirtualPages<SnapshotRegion>(
                 process,
                 requiredPageFlags,
                 excludedPageFlags,
@@ -73,79 +105,88 @@
                 startAddress,
                 endAddress);
 
-            foreach (NormalizedRegion virtualPage in virtualPages)
+            foreach (SnapshotRegion snapshotRegion in snapshotRegions)
             {
-                virtualPage.Align(ScanSettings.Alignment);
-                readGroups.Add(new ReadGroup(virtualPage.BaseAddress, virtualPage.RegionSize));
+                snapshotRegion.Align(ScanSettings.Alignment);
             }
 
-            return new Snapshot(String.Empty, readGroups.SelectMany(readGroup => readGroup.Shard(SnapshotQuery.ShardSize)));
+            // Convert to an array to force immediate evaluation of the IEnumerable, which normally does lazy evaluation.
+            return new Snapshot(String.Empty, snapshotRegions?.ToArray());
         }
 
         /// <summary>
         /// Creates a new snapshot of memory in the target process. Will not read any memory.
         /// </summary>
+        /// <param name="process"></param>
+        /// <param name="emulatorType"></param>
         /// <returns>The snapshot of memory taken in the target process.</returns>
         private static Snapshot CreateSnapshotFromSettings(Process process, EmulatorType emulatorType = EmulatorType.None)
         {
-            List<ReadGroup> readGroups = new List<ReadGroup>();
-            IEnumerable<NormalizedRegion> virtualPages;
+            IEnumerable<SnapshotRegion> snapshotRegions;
+
+            if (emulatorType == EmulatorType.AutoDetect)
+            {
+                Logger.Log(LogLevel.Warn, "CreateSnapshotFromSettings called before the emulator type could be resolved. This may result in inaccurate results.");
+            }
 
             // Fetch virtual pages based on settings
-            switch (emulatorType)
+            MemoryProtectionEnum requiredPageFlags = SnapshotQuery.GetRequiredProtectionSettings();
+            MemoryProtectionEnum excludedPageFlags = SnapshotQuery.GetExcludedProtectionSettings();
+            MemoryTypeEnum allowedTypeFlags = SnapshotQuery.GetAllowedTypeSettings();
+
+            UInt64 startAddress;
+            UInt64 endAddress;
+
+            if (ScanSettings.IsUserMode)
             {
-                case EmulatorType.Dolphin:
-                    virtualPages = MemoryQueryer.Instance.GetEmulatorVirtualPages(process, emulatorType);
-                    break;
-                case EmulatorType.None:
-                default:
-                    MemoryProtectionEnum requiredPageFlags = SnapshotQuery.GetRequiredProtectionSettings();
-                    MemoryProtectionEnum excludedPageFlags = SnapshotQuery.GetExcludedProtectionSettings();
-                    MemoryTypeEnum allowedTypeFlags = SnapshotQuery.GetAllowedTypeSettings();
-
-                    UInt64 startAddress;
-                    UInt64 endAddress;
-
-                    if (ScanSettings.IsUserMode)
-                    {
-                        startAddress = 0;
-                        endAddress = MemoryQueryer.Instance.GetMaxUsermodeAddress(process);
-                    }
-                    else
-                    {
-                        startAddress = ScanSettings.StartAddress;
-                        endAddress = ScanSettings.EndAddress;
-                    }
-
-                    virtualPages = MemoryQueryer.Instance.GetVirtualPages(
-                        process,
-                        requiredPageFlags,
-                        excludedPageFlags,
-                        allowedTypeFlags,
-                        startAddress,
-                        endAddress);
-                    break;
+                startAddress = 0;
+                endAddress = MemoryQueryer.Instance.GetMaxUsermodeAddress(process);
             }
+            else
+            {
+                startAddress = ScanSettings.StartAddress;
+                endAddress = ScanSettings.EndAddress;
+            }
+
+            snapshotRegions = MemoryQueryer.Instance.GetVirtualPages<SnapshotRegion>(
+                process,
+                requiredPageFlags,
+                excludedPageFlags,
+                allowedTypeFlags,
+                startAddress,
+                endAddress,
+                RegionBoundsHandling.Exclude,
+                emulatorType);
 
             // Convert each virtual page to a snapshot region
-            foreach (NormalizedRegion virtualPage in virtualPages)
+            foreach (SnapshotRegion snapshotRegion in snapshotRegions)
             {
-                virtualPage.Align(ScanSettings.Alignment);
-                readGroups.Add(new ReadGroup(virtualPage.BaseAddress, virtualPage.RegionSize));
+                snapshotRegion.Align(ScanSettings.Alignment);
             }
 
-            return new Snapshot(String.Empty, readGroups.SelectMany(readGroup => readGroup.Shard(SnapshotQuery.ShardSize)));
+            // Convert to an array to force immediate evaluation of the IEnumerable, which normally does lazy evaluation.
+            return new Snapshot(String.Empty, snapshotRegions);
         }
 
         /// <summary>
         /// Creates a snapshot from modules in the selected process.
         /// </summary>
+        /// <param name="process"></param>
+        /// <param name="emulatorType"></param>
         /// <returns>The created snapshot.</returns>
-        private static Snapshot CreateSnapshotFromModules(Process process)
+        private static Snapshot CreateSnapshotFromModules(Process process, EmulatorType emulatorType)
         {
-            IEnumerable<ReadGroup> moduleGroups = MemoryQueryer.Instance.GetModules(process).Select(region => new ReadGroup(region.BaseAddress, region.RegionSize));
+            IEnumerable<SnapshotRegion> moduleRegions;
 
-            Snapshot moduleSnapshot = new Snapshot(null, moduleGroups.SelectMany(readGroup => readGroup.Shard(SnapshotQuery.ShardSize)));
+            if (emulatorType == EmulatorType.AutoDetect)
+            {
+                Logger.Log(LogLevel.Warn, "CreateSnapshotFromModules called before the emulator type could be resolved. This may result in inaccurate results.");
+            }
+
+            moduleRegions = MemoryQueryer.Instance.GetModules(process, emulatorType).Select(region => new SnapshotRegion(region.BaseAddress, region.RegionSize));
+
+            // Convert to an array to force immediate evaluation of the IEnumerable, which normally does lazy evaluation.
+            Snapshot moduleSnapshot = new Snapshot(null, moduleRegions?.ToArray());
 
             return moduleSnapshot;
         }
@@ -153,10 +194,17 @@
         /// <summary>
         /// Creates a snapshot from modules in the selected process.
         /// </summary>
+        /// <param name="process"></param>
+        /// <param name="emulatorType"></param>
         /// <returns>The created snapshot.</returns>
-        private static Snapshot CreateSnapshotFromHeaps(Process process)
+        private static Snapshot CreateSnapshotFromHeaps(Process process, EmulatorType emulatorType)
         {
-            // TODO: This currently grabs all usermode memory and excludes modules. A better implementation would involve actually grabbing heaps.
+            if (emulatorType == EmulatorType.AutoDetect)
+            {
+                Logger.Log(LogLevel.Warn, "CreateSnapshotFromHeaps called before the emulator type could be resolved. This may result in inaccurate results.");
+            }
+
+            // This function implementation currently grabs all usermode memory and excludes modules. A better implementation would involve actually grabbing heaps.
             Snapshot snapshot = SnapshotQuery.CreateSnapshotFromUsermodeMemory(process);
             IEnumerable<NormalizedModule> modules = MemoryQueryer.Instance.GetModules(process);
 
@@ -174,7 +222,9 @@
                 excludedPageFlags,
                 allowedTypeFlags,
                 startAddress,
-                endAddress);
+                endAddress,
+                RegionBoundsHandling.Exclude,
+                emulatorType);
 
             foreach (NormalizedRegion virtualPage in virtualPages)
             {
@@ -184,7 +234,7 @@
                 }
 
                 virtualPage.Align(ScanSettings.Alignment);
-                memoryRegions.Add(new SnapshotRegion(new ReadGroup(virtualPage.BaseAddress, virtualPage.RegionSize)));
+                memoryRegions.Add(new SnapshotRegion(virtualPage.BaseAddress, virtualPage.RegionSize));
             }
 
             return new Snapshot(String.Empty, memoryRegions);

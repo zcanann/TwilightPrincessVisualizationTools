@@ -23,9 +23,6 @@
     <Setting Name="MemoryTypeMapped" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
-    <Setting Name="InputCorrelatorTimeOutInterval" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">500</Value>
-    </Setting>
     <Setting Name="Alignment" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">4</Value>
     </Setting>
@@ -56,11 +53,14 @@
     <Setting Name="IsUserMode" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
-    <Setting Name="DataType" Type="Twilight.Engine.Common.ScannableType" Scope="User">
+    <Setting Name="DataType" Type="GES.Engine.Common.ScannableType" Scope="User">
       <Value Profile="(Default)">Twilight.Engine.Common.ScannableType.Int32</Value>
     </Setting>
     <Setting Name="EmulatorType" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">0</Value>
+    </Setting>
+    <Setting Name="UseMultiThreadScans" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
     </Setting>
   </Settings>
 </SettingsFile>

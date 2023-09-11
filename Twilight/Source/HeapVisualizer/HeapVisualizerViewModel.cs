@@ -340,25 +340,33 @@
 
         public UInt32 GetHeapTableBase()
         {
-            return MainViewModel.GetInstance().IsWii ? HeapTableBaseWii1_0 : HeapTableBaseGc;
+            switch(MainViewModel.GetInstance().DetectedVersion)
+            {
+                default:
+                case EDetectedVersion.GC_En: return HeapTableBaseGc;
+                case EDetectedVersion.Wii_En_1_0: return HeapTableBaseWii1_0;
+            }
         }
 
         public Int32 GetHeapCheckSize()
         {
-            return MainViewModel.GetInstance().IsWii ? typeof(HeapCheck).StructLayoutAttribute.Size - 4 : typeof(HeapCheck).StructLayoutAttribute.Size;
+            switch (MainViewModel.GetInstance().DetectedVersion)
+            {
+                default:
+                case EDetectedVersion.GC_En: return typeof(HeapCheck).StructLayoutAttribute.Size;
+                case EDetectedVersion.Wii_En_1_0: return typeof(HeapCheck).StructLayoutAttribute.Size - 4;
+            }
         }
 
         public UInt32 GetHeapStart(Int32 heapIndex)
         {
             heapIndex = Math.Clamp(heapIndex, 0, HeapCount - 1);
 
-            if (MainViewModel.GetInstance().IsWii)
+            switch (MainViewModel.GetInstance().DetectedVersion)
             {
-                return HeapsWii1_0[heapIndex].Item1;
-            }
-            else
-            {
-                return HeapsGc[heapIndex].Item1;
+                default:
+                case EDetectedVersion.GC_En: return HeapsGc[heapIndex].Item1;
+                case EDetectedVersion.Wii_En_1_0: return HeapsWii1_0[heapIndex].Item1;
             }
         }
 
@@ -366,13 +374,11 @@
         {
             heapIndex = Math.Clamp(heapIndex, 0, HeapCount - 1);
 
-            if (MainViewModel.GetInstance().IsWii)
+            switch (MainViewModel.GetInstance().DetectedVersion)
             {
-                return HeapsWii1_0[heapIndex].Item2 - this.GetHeapStart(heapIndex);
-            }
-            else
-            {
-                return HeapsGc[heapIndex].Item2 - this.GetHeapStart(heapIndex);
+                default:
+                case EDetectedVersion.GC_En: return HeapsGc[heapIndex].Item2 - this.GetHeapStart(heapIndex);
+                case EDetectedVersion.Wii_En_1_0: return HeapsWii1_0[heapIndex].Item2 - this.GetHeapStart(heapIndex);
             }
         }
 
@@ -424,7 +430,7 @@
             {
                 case HeapVisualizationOption.CMem:
                     this.BuildHeapVisualizationsFromCMem();
-                    this.BuildActorReferenceVisualizations();
+                    // this.BuildActorReferenceVisualizations();
                     break;
                 case HeapVisualizationOption.NonZeroMemory:
                     this.BuildHeapVisualizationsFromNonZeroMemory();
@@ -445,11 +451,13 @@
 
         private void ReadAndCacheHeaps()
         {
+            UInt64 gameCubeMemoryBase = MemoryQueryer.Instance.ResolveModule(SessionManager.Session.OpenedProcess, "GC", EmulatorType.Dolphin);
+
             Int32 heapCheckSize = this.GetHeapCheckSize();
             bool success;
             byte[] heapTable = MemoryReader.Instance.ReadBytes(
                 SessionManager.Session.OpenedProcess,
-                MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, GetHeapTableBase(), EmulatorType.Dolphin),
+                gameCubeMemoryBase + (GetHeapTableBase() - 0x80000000),
                 sizeof(UInt32) * HeapCount,
                 out success);
 
@@ -467,7 +475,7 @@
 
                 byte[] heapCheckBytes = MemoryReader.Instance.ReadBytes(
                     SessionManager.Session.OpenedProcess,
-                    MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, heapPointer, EmulatorType.Dolphin),
+                    gameCubeMemoryBase + (heapPointer - 0x80000000),
                     heapCheckSize,
                     out success);
 
@@ -482,7 +490,7 @@
                 const Int32 maxNameSize = 12;
                 byte[] heapNameBytes = MemoryReader.Instance.ReadBytes(
                     SessionManager.Session.OpenedProcess,
-                    MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, heapCheck.mNamePointer, EmulatorType.Dolphin),
+                    gameCubeMemoryBase + (heapCheck.mNamePointer - 0x80000000),
                     maxNameSize,
                     out success);
 
@@ -499,6 +507,8 @@
 
         private void BuildHeapVisualizationsFromNonZeroMemory()
         {
+            UInt64 gameCubeMemoryBase = MemoryQueryer.Instance.ResolveModule(SessionManager.Session.OpenedProcess, "GC", EmulatorType.Dolphin);
+
             for (Int32 heapIndex = 0; heapIndex < HeapCount; heapIndex++)
             {
                 HeapCheck heap = this.cachedHeapInfo[heapIndex];
@@ -512,7 +522,7 @@
                 bool success;
                 byte[] fullHeapData = MemoryReader.Instance.ReadBytes(
                     SessionManager.Session.OpenedProcess,
-                    MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, heap.heapPointer, EmulatorType.Dolphin),
+                    gameCubeMemoryBase + (heap.heapPointer - 0x80000000),
                     (Int32)heap.heapSize,
                     out success);
 
@@ -523,6 +533,7 @@
             }
         }
 
+        /*
         private byte[] slotData = new byte[ActorReferenceCountTableConstants.ActorSlotStructSize];
 
         /// <summary>
@@ -580,12 +591,15 @@
                 }
             }
         }
+        */
 
         /// <summary>
         /// Experimental, no idea what I am doing here.
         /// </summary>
         private void BuildHeapVisualizationsFromJkrHeaps()
         {
+            UInt64 gameCubeMemoryBase = MemoryQueryer.Instance.ResolveModule(SessionManager.Session.OpenedProcess, "GC", EmulatorType.Dolphin);
+
             for (Int32 heapIndex = 0; heapIndex < HeapCount; heapIndex++)
             {
                 HeapCheck heap = this.cachedHeapInfo[heapIndex];
@@ -598,7 +612,7 @@
                 bool success;
                 byte[] jkrExpHeapData = MemoryReader.Instance.ReadBytes(
                     SessionManager.Session.OpenedProcess,
-                    MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, heap.heapPointer, EmulatorType.Dolphin),
+                    gameCubeMemoryBase + (heap.heapPointer - 0x80000000),
                     typeof(JKRExpHeap).StructLayoutAttribute.Size,
                     out success);
 
@@ -623,7 +637,7 @@
 
                     byte[] jkrHeapData = MemoryReader.Instance.ReadBytes(
                         SessionManager.Session.OpenedProcess,
-                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, nextStackPointer, EmulatorType.Dolphin),
+                        gameCubeMemoryBase + (nextStackPointer - 0x80000000),
                         typeof(JKRHeap).StructLayoutAttribute.Size,
                         out success);
 
@@ -653,6 +667,8 @@
 
         private void BuildHeapVisualizationsFromCMem()
         {
+            UInt64 gameCubeMemoryBase = MemoryQueryer.Instance.ResolveModule(SessionManager.Session.OpenedProcess, "GC", EmulatorType.Dolphin);
+
             for (Int32 heapIndex = 0; heapIndex < HeapCount; heapIndex++)
             {
                 HeapCheck heap = this.cachedHeapInfo[heapIndex];
@@ -665,7 +681,7 @@
                 bool success;
                 byte[] jkrExpHeapData = MemoryReader.Instance.ReadBytes(
                     SessionManager.Session.OpenedProcess,
-                    MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, heap.heapPointer, EmulatorType.Dolphin),
+                    gameCubeMemoryBase + (heap.heapPointer - 0x80000000),
                     typeof(JKRExpHeap).StructLayoutAttribute.Size,
                     out success);
 
@@ -691,7 +707,7 @@
 
                         byte[] cMemBlockData = MemoryReader.Instance.ReadBytes(
                             SessionManager.Session.OpenedProcess,
-                            MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, nextCMemBlockPtr, EmulatorType.Dolphin),
+                            gameCubeMemoryBase + (nextCMemBlockPtr - 0x80000000),
                             typeof(CMemBlock).StructLayoutAttribute.Size,
                             out success);
 
@@ -720,7 +736,7 @@
 
                         byte[] cMemBlockData = MemoryReader.Instance.ReadBytes(
                             SessionManager.Session.OpenedProcess,
-                            MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, nextCMemBlockPtr, EmulatorType.Dolphin),
+                            gameCubeMemoryBase + (nextCMemBlockPtr - 0x80000000),
                             typeof(CMemBlock).StructLayoutAttribute.Size,
                             out success);
 

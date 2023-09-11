@@ -109,18 +109,6 @@ namespace Twilight.Engine.Scanning.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("500")]
-        public int InputCorrelatorTimeOutInterval {
-            get {
-                return ((int)(this["InputCorrelatorTimeOutInterval"]));
-            }
-            set {
-                this["InputCorrelatorTimeOutInterval"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("4")]
         public int Alignment {
             get {
@@ -260,6 +248,18 @@ namespace Twilight.Engine.Scanning.Properties {
             }
             set {
                 this["EmulatorType"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool UseMultiThreadScans {
+            get {
+                return ((bool)(this["UseMultiThreadScans"]));
+            }
+            set {
+                this["UseMultiThreadScans"] = value;
             }
         }
     }

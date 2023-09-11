@@ -7,7 +7,7 @@
     /// <summary>
     /// Class to define a constraint for certain types of scans.
     /// </summary>
-    public class ScanConstraint : Constraint, INotifyPropertyChanged
+    public class ScanConstraint : IScanConstraint, INotifyPropertyChanged
     {
         /// <summary>
         /// The constraint type.
@@ -18,6 +18,11 @@
         /// The value associated with this constraint, if applicable.
         /// </summary>
         private Object constraintValue;
+
+        /// <summary>
+        /// The args associated with this constraint, if applicable.
+        /// </summary>
+        private Object constraintArgs;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ScanConstraint" /> class.
@@ -33,14 +38,15 @@
         /// </summary>
         /// <param name="valueConstraint">The constraint type.</param>
         /// <param name="value">The value associated with this constraint.</param>
-        public ScanConstraint(ConstraintType valueConstraint, Object value = null)
+        public ScanConstraint(ConstraintType valueConstraint, Object value = null, Object args = null)
         {
             this.Constraint = valueConstraint;
             this.ConstraintValue = value;
+            this.ConstraintArgs = args;
         }
 
         /// <summary>
-        /// Occurs after a property value changes.
+        /// An event that is raised when a property of this object changes.
         /// </summary>
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -89,6 +95,30 @@
         }
 
         /// <summary>
+        /// Gets or sets any optional arguements provided with the constraint, if applicable.
+        /// </summary>
+        public Object ConstraintArgs
+        {
+            get
+            {
+                if (this.IsValuedConstraint())
+                {
+                    return this.constraintArgs;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+
+            set
+            {
+                this.constraintArgs = value;
+                this.RaisePropertyChanged(nameof(this.ConstraintArgs));
+            }
+        }
+
+        /// <summary>
         /// Gets the name associated with this constraint.
         /// </summary>
         public String ConstraintName
@@ -127,7 +157,7 @@
             }
         }
 
-        public override void SetElementType(ScannableType elementType)
+        public void SetElementType(ScannableType elementType)
         {
             if (this.ConstraintValue == null)
             {
@@ -176,7 +206,7 @@
             }
         }
 
-        public override Boolean IsValid()
+        public Boolean IsValid()
         {
             if (!this.IsValuedConstraint())
             {
@@ -190,9 +220,9 @@
         /// Clones this scan constraint.
         /// </summary>
         /// <returns>The cloned scan constraint.</returns>
-        public override Constraint Clone()
+        public IScanConstraint Clone()
         {
-            return new ScanConstraint(this.Constraint, this.ConstraintValue);
+            return new ScanConstraint(this.Constraint, this.ConstraintValue, this.ConstraintArgs);
         }
 
         /// <summary>

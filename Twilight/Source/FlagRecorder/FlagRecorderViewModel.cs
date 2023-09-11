@@ -84,12 +84,14 @@
                         {
                             Application.Current.Dispatcher.Invoke(() =>
                             {
+                                UInt64 gameCubeMemoryBase = MemoryQueryer.Instance.ResolveModule(SessionManager.Session.OpenedProcess, "GC", EmulatorType.Dolphin);
+
                                 bool success = false;
 
                                 // TOOD: Expose ranges as editable values to user
                                 Byte[] gameBits = MemoryReader.Instance.ReadBytes(
                                     SessionManager.Session.OpenedProcess,
-                                    MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, 0x803A32A8, EmulatorType.Dolphin),
+                                    gameCubeMemoryBase + 0x003A32A8,
                                     1772,
                                     out success);
 
@@ -100,7 +102,7 @@
 
                                 UInt32 frame = BinaryPrimitives.ReverseEndianness(MemoryReader.Instance.Read<UInt32>(
                                     SessionManager.Session.OpenedProcess,
-                                    MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, 0x803DCB1C, EmulatorType.Dolphin),
+                                    gameCubeMemoryBase + 0x003DCB1C,
                                     out success));
 
                                 if (success && gameBits != null)

@@ -1,6 +1,7 @@
 ﻿namespace Twilight.Source.ActorReferenceCountVisualizer
 {
     using System;
+    using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
     using System.Windows;
@@ -11,6 +12,7 @@
     using Twilight.Engine.Common.Logging;
     using Twilight.Engine.Memory;
     using Twilight.Source.Docking;
+    using Twilight.Source.Main;
 
     /// <summary>
     /// View model for the Heap Visualizer.
@@ -33,13 +35,6 @@
         {
             DockingViewModel.GetInstance().RegisterViewModel(this);
 
-            this.ActorReferenceCountSlots = new FullyObservableCollection<ActorReferenceCountTableSlotView>();
-
-            for (int index = 0; index < ActorReferenceCountTableConstants.ActorReferenceCountTableMaxEntries; index++)
-            {
-                this.ActorReferenceCountSlots.Add(new ActorReferenceCountTableSlotView(new ActorReferenceCountTableSlot()));
-            }
-
             try
             {
                 this.ActorSlotBitmap = new WriteableBitmap(ActorSlotImageWidth, ActorSlotImageHeight, DPI, DPI, PixelFormats.Bgr24, null);
@@ -60,15 +55,16 @@
             this.CanUpdate = false;
         }
 
+        private Byte[] CachedRawActorSlotTableBytes { get; set; }
+
+        private Byte[] RawActorSlotTableBytes { get; set; }
+
+        public ActorSlotsTableDataView ActorSlotsTable { get; private set; }
+
         /// <summary>
         /// Gets the actor visualization bitmap.
         /// </summary>
         public WriteableBitmap ActorSlotBitmap { get; private set; }
-
-        /// <summary>
-        /// Gets the list of actor reference count slots.
-        /// </summary>
-        public FullyObservableCollection<ActorReferenceCountTableSlotView> ActorReferenceCountSlots { get; private set; }
 
         /// <summary>
         /// Gets the raw bitmap data for actor slot visualization.
@@ -123,16 +119,28 @@
             });
         }
 
-        private byte[] slotData = new byte[ActorReferenceCountTableConstants.ActorSlotStructSize];
-
         private void UpdateActorSlots()
         {
+            if (this.RawActorSlotTableBytes == null)
+            {
+                this.RawActorSlotTableBytes = new Byte[typeof(ActorTableDataSerializable).StructLayoutAttribute.Size];
+            }
+
+            UInt64 gameCubeMemoryBase = MemoryQueryer.Instance.ResolveModule(SessionManager.Session.OpenedProcess, "GC", EmulatorType.Dolphin);
+            UInt64 actorSlotsTableAddress;
+
+            switch (MainViewModel.GetInstance().DetectedVersion)
+            {
+                default: return;
+                case EDetectedVersion.GC_En: actorSlotsTableAddress = ActorReferenceCountTableConstants.ActorReferenceTableBaseGcEn; break;
+            }
+
             // Read the entire actor reference counting table
-            bool success = false;
-            byte[] actorReferenceCountTable = MemoryReader.Instance.ReadBytes(
+            bool success;
+            MemoryReader.Instance.ReadBytes(
                 SessionManager.Session.OpenedProcess,
-                MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ActorReferenceCountTableConstants.GetActorReferenceTableSize(), EmulatorType.Dolphin),
-                ActorReferenceCountTableConstants.ActorSlotStructSize * ActorReferenceCountTableConstants.ActorReferenceCountTableMaxEntries,
+                this.RawActorSlotTableBytes,
+                gameCubeMemoryBase + actorSlotsTableAddress,
                 out success);
 
             // Clear out old visual data
@@ -141,29 +149,32 @@
             // Update new data / visual data
             if (success)
             {
+                if (this.CachedRawActorSlotTableBytes == null)
+                {
+                    this.CachedRawActorSlotTableBytes = new Byte[typeof(ActorTableDataSerializable).StructLayoutAttribute.Size];
+                }
+
+                if (this.ActorSlotsTable == null)
+                {
+                    this.ActorSlotsTable = new ActorSlotsTableDataView(new ActorSlotsTableData());
+                }
+
+                ActorSlotsTableData.Deserialize(this.ActorSlotsTable.ActorSlotsTableData, this.RawActorSlotTableBytes);
+
+                // Notify changes if new bytes differ from cached
+                if (!this.RawActorSlotTableBytes.SequenceEqual(this.CachedRawActorSlotTableBytes))
+                {
+                    this.ActorSlotsTable.ActorSlotsTableData.Refresh(this.RawActorSlotTableBytes);
+                    this.ActorSlotsTable.RefreshAllProperties();
+                    this.RaisePropertyChanged(nameof(this.ActorSlotsTable));
+                }
+
+                this.RawActorSlotTableBytes.CopyTo(this.CachedRawActorSlotTableBytes, 0);
+
                 for (int actorSlotIndex = 0; actorSlotIndex < ActorReferenceCountTableConstants.ActorReferenceCountTableMaxEntries; actorSlotIndex++)
                 {
-                    Array.Copy(actorReferenceCountTable, actorSlotIndex * ActorReferenceCountTableConstants.ActorSlotStructSize, slotData, 0, ActorReferenceCountTableConstants.ActorSlotStructSize);
-                    ActorReferenceCountTableSlotView result = new ActorReferenceCountTableSlotView(ActorReferenceCountTableSlot.FromByteArray(slotData, actorSlotIndex));
-
-                    // Copy data over field by field to avoid triggering the FullyObservableCollection changes.
-                    if (result != null)
-                    {
-                        this.ActorReferenceCountSlots[actorSlotIndex].Slot.ActorSlotIndex = actorSlotIndex;
-
-                        // Avoid calling setters to bypass the write-back to Dolphin memory
-                        this.ActorReferenceCountSlots[actorSlotIndex].Slot.name = Encoding.ASCII.GetBytes(result.Name);
-                        this.ActorReferenceCountSlots[actorSlotIndex].Slot.referenceCount = result.ReferenceCount;
-                        this.ActorReferenceCountSlots[actorSlotIndex].Slot.padding = result.Padding;
-                        this.ActorReferenceCountSlots[actorSlotIndex].Slot.mDMCommandPtr = result.MDMCommandPtr;
-                        this.ActorReferenceCountSlots[actorSlotIndex].Slot.mArchivePtr = result.MArchivePtr;
-                        this.ActorReferenceCountSlots[actorSlotIndex].Slot.heapPtr = result.HeapPtr;
-                        this.ActorReferenceCountSlots[actorSlotIndex].Slot.mDataHeapPtr = result.MDataHeapPtr;
-                        this.ActorReferenceCountSlots[actorSlotIndex].Slot.mResPtrPtr = result.MResPtrPtr;
-                        this.ActorReferenceCountSlots[actorSlotIndex].RefreshAllProperties();
-                    }
-
-                    this.ColorActorSlotMemory(actorSlotIndex, this.ActorReferenceCountSlots[actorSlotIndex].ReferenceCount > 0 ? Color.FromRgb(255, 0, 0) : Color.FromRgb(0, 0, 0));
+                    // TODO: Fixme
+                    // this.ColorActorSlotMemory(actorSlotIndex, this.ActorReferenceCountSlots[actorSlotIndex].ReferenceCount > 0 ? Color.FromRgb(255, 0, 0) : Color.FromRgb(0, 0, 0));
                 }
             }
 

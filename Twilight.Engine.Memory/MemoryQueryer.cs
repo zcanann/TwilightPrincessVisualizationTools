@@ -6,19 +6,19 @@
     using System.Threading;
 
     /// <summary>
-    /// Instantiates the proper memory queryer based on the host OS.
+    /// A static class for accessing an object uses to query memory in a target process.
     /// </summary>
     public static class MemoryQueryer
     {
         /// <summary>
         /// Singleton instance of the <see cref="WindowsMemoryQuery"/> class.
         /// </summary>
-        private static readonly Lazy<WindowsMemoryQuery> windowsMemoryQueryInstance = new Lazy<WindowsMemoryQuery>(
+        private static readonly Lazy<WindowsMemoryQuery> WindowsMemoryQueryInstance = new Lazy<WindowsMemoryQuery>(
             () => { return new WindowsMemoryQuery(); },
             LazyThreadSafetyMode.ExecutionAndPublication);
 
         /// <summary>
-        /// Creates the memory queryer for the current operating system.
+        /// Gets a <see cref="IMemoryQueryer"/> object instance for the current operating system.
         /// </summary>
         /// <returns>An instance of a memory queryer.</returns>
         public static IMemoryQueryer Instance
@@ -35,7 +35,7 @@
                     case PlatformID.Win32S:
                     case PlatformID.Win32Windows:
                     case PlatformID.WinCE:
-                        return MemoryQueryer.windowsMemoryQueryInstance.Value;
+                        return MemoryQueryer.WindowsMemoryQueryInstance.Value;
                     case PlatformID.Unix:
                         ex = new Exception("Unix operating system is not supported");
                         break;

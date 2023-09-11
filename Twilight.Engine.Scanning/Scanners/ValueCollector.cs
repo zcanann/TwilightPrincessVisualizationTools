@@ -1,14 +1,15 @@
 ﻿namespace Twilight.Engine.Scanning.Scanners
 {
     using Twilight.Engine.Common;
+    using Twilight.Engine.Common.Extensions;
     using Twilight.Engine.Common.Logging;
-    using Twilight.Engine.Processes;
+    using Twilight.Engine.Scanning.Scanners.Constraints;
     using Twilight.Engine.Scanning.Snapshots;
     using System;
     using System.Diagnostics;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-    using static Twilight.Engine.Common.TrackableTask;
 
     /// <summary>
     /// Collect values for a given snapshot. The values are assigned to a new snapshot.
@@ -20,71 +21,108 @@
         /// </summary>
         private const String Name = "Value Collector";
 
-        public static TrackableTask<Snapshot> CollectValues(Process process, Snapshot snapshot, String taskIdentifier = null)
+        public static TrackableTask<Snapshot> CollectValues(Process process, Snapshot snapshot, String taskIdentifier = null, ScanConstraints optionalConstraint = null, Boolean withLogging = true)
         {
             try
             {
                 return TrackableTask<Snapshot>
                     .Create(ValueCollector.Name, taskIdentifier, out UpdateProgress updateProgress, out CancellationToken cancellationToken)
-                    .With(Task<Snapshot>.Run(() =>
+                    .With(Task<Snapshot>.Run(
+                    () =>
                     {
                         try
                         {
                             Int32 processedRegions = 0;
 
-                            Logger.Log(LogLevel.Info, "Reading values from memory...");
+                            if (withLogging)
+                            {
+                                Logger.Log(LogLevel.Info, "Reading values from memory...");
+                            }
 
                             Stopwatch stopwatch = new Stopwatch();
                             stopwatch.Start();
 
-                            ParallelOptions options = ParallelSettings.ParallelSettingsFastest.Clone();
+                            ParallelOptions options = ParallelSettings.ParallelSettingsFastest;
                             options.CancellationToken = cancellationToken;
 
                             // Read memory to get current values for each region
                             Parallel.ForEach(
-                                snapshot.OptimizedReadGroups,
+                                snapshot?.ReadOptimizedSnapshotRegions,
                                 options,
-                                (readGroup) =>
+                                (snapshotRegion) =>
                                 {
                                     // Check for canceled scan
                                     cancellationToken.ThrowIfCancellationRequested();
 
                                     // Read the memory for this region
-                                    readGroup.ReadAllMemory(process);
+                                    snapshotRegion.ReadAllMemory(process);
+
+                                    if (optionalConstraint != null)
+                                    {
+                                        snapshotRegion.SetAlignment(optionalConstraint.Alignment, optionalConstraint.ElementType.Size);
+                                    }
 
                                     // Update progress every N regions
                                     if (Interlocked.Increment(ref processedRegions) % 32 == 0)
                                     {
+                                        // Technically this callback is a data race, but it does not really matter if scan progress is not reported perfectly accurately
                                         updateProgress((float)processedRegions / (float)snapshot.RegionCount * 100.0f);
                                     }
                                 });
 
-                            // Exit if canceled
                             cancellationToken.ThrowIfCancellationRequested();
 
-                            stopwatch.Stop();
-                            snapshot.LoadMetaData(ScannableType.Byte.Size);
+                            UInt64 byteCount;
 
-                            Logger.Log(LogLevel.Info, "Values collected in: " + stopwatch.Elapsed);
-                            Logger.Log(LogLevel.Info, "Results: " + snapshot.ElementCount + " bytes (" + Conversions.ValueToMetricSize(snapshot.ByteCount) + ")");
+                            // If there is a constraint provided, we want to apply it, which changes how we count the collected bytes.
+                            if (optionalConstraint == null)
+                            {
+                                byteCount = snapshot?.SnapshotRegions?.Sum(snapshotRegion => unchecked((UInt64)snapshotRegion.RegionSize)) ?? 0;
+                            }
+                            else
+                            {
+                                snapshot.SetAlignment(optionalConstraint.Alignment);
+                                byteCount = snapshot.ByteCount;
+                            }
+
+                            stopwatch.Stop();
+
+                            if (withLogging)
+                            {
+                                Logger.Log(LogLevel.Info, "Values collected in: " + stopwatch.Elapsed);
+                                Logger.Log(LogLevel.Info, Conversions.ValueToMetricSize(byteCount) + " bytes read");
+                            }
 
                             return snapshot;
                         }
                         catch (OperationCanceledException ex)
                         {
-                            Logger.Log(LogLevel.Warn, "Scan canceled", ex);
+                            if (withLogging)
+                            {
+                                Logger.Log(LogLevel.Warn, "Scan canceled", ex);
+                            }
+
                             return null;
                         }
                         catch (Exception ex)
                         {
-                            Logger.Log(LogLevel.Error, "Error performing scan", ex);
+                            if (withLogging)
+                            {
+                                Logger.Log(LogLevel.Error, "Error performing scan", ex);
+                            }
+
                             return null;
                         }
-                    }, cancellationToken));
+                    },
+                    cancellationToken));
             }
             catch (TaskConflictException ex)
             {
-                Logger.Log(LogLevel.Warn, "Unable to start scan. Scan is already queued.");
+                if (withLogging)
+                {
+                    Logger.Log(LogLevel.Warn, "Unable to start scan. Scan is already queued.");
+                }
+
                 throw ex;
             }
         }

@@ -37,7 +37,7 @@
             ColumnWidth="*"
             HeadersVisibility="Column"
             IsReadOnly="True"
-            ItemsSource="{Binding Path=ActorReferenceCountSlots}"
+            ItemsSource="{Binding Path=ActorSlotsTable.RawActorSlots}"
             RowHeaderWidth="0"
             SelectionMode="Extended"
             SelectionUnit="CellOrRowHeader"

@@ -2,17 +2,13 @@
 {
     using Twilight.Engine.Common;
     using Twilight.Engine.Common.Logging;
-    using Twilight.Engine.Memory;
-    using Twilight.Engine.Processes;
-    using Twilight.Engine.Scanning.Snapshots;
     using System;
     using System.Diagnostics;
     using System.Threading;
     using System.Threading.Tasks;
-    using static Twilight.Engine.Common.TrackableTask;
 
     /// <summary>
-    /// Collect values for a given snapshot. The values are assigned to a new snapshot.
+    /// Detects whether the target process is an emulator.
     /// </summary>
     public static class EmulatorDetector
     {
@@ -21,6 +17,12 @@
         /// </summary>
         private const String Name = "Emulator Detector";
 
+        /// <summary>
+        /// Creates a task to detect whether the specified process is an emulator.
+        /// </summary>
+        /// <param name="process">The candidate emulator process.</param>
+        /// <param name="taskIdentifier">An optional unique identifier for this task to prevent duplicate task creation.</param>
+        /// <returns>A task to detect whether the specified process is an emulator.</returns>
         public static TrackableTask<EmulatorType> DetectEmulator(Process process, String taskIdentifier = null)
         {
             try
@@ -36,11 +38,11 @@
 
                             EmulatorType detectedEmulator = EmulatorType.None;
 
-                            if (process?.MainWindowTitle?.StartsWith("Dolphin") ?? false)
+                            // TODO: something a bit more accurate.
+                            if ((process?.MainWindowTitle?.StartsWith("Dolphin") ?? false)
+                                || (process?.ProcessName?.StartsWith("Dolphin") ?? false))
                             {
                                 detectedEmulator = EmulatorType.Dolphin;
-
-                                // TODO: something a bit more accurate.
                             }
 
                             // Exit if canceled
@@ -51,7 +53,7 @@
                             {
                                 case EmulatorType.Dolphin:
                                 {
-                                    Logger.Log(LogLevel.Info, "Dolphin Emulator detected. Scans will only scan GameCube/Wii memory.");
+                                    Logger.Log(LogLevel.Info, "Dolphin Emulator detected. Scans will only scan GameCube/Wii memory. This can be disabled from emulator settings.");
                                     break;
                                 }
                             }

@@ -7,6 +7,14 @@
     using System.Threading;
     using System.Threading.Tasks;
 
+    public delegate void OnTaskCanceled(TrackableTask task);
+
+    public delegate void OnTaskCompleted(TrackableTask task);
+
+    public delegate void OnProgressUpdate(Single progress);
+
+    public delegate void UpdateProgress(Single progress);
+
     /// <summary>
     /// Represents a task on which the progress can be tracked.
     /// </summary>
@@ -17,19 +25,7 @@
         /// </summary>
         public static readonly String UniversalIdentifier = Guid.NewGuid().ToString();
 
-        public delegate void OnTaskCanceled(TrackableTask task);
-
-        public delegate void OnTaskCompleted(TrackableTask task);
-
-        public delegate void OnProgressUpdate(Single progress);
-
-        public delegate void UpdateProgress(Single progress);
-
-        public event OnTaskCanceled OnCanceledEvent;
-
-        public event OnTaskCompleted OnCompletedEvent;
-
-        public event OnProgressUpdate OnProgressUpdatedEvent;
+        protected static readonly ConcurrentDictionary<String, TrackableTask> UniqueTaskPool = new ConcurrentDictionary<String, TrackableTask>();
 
         private Single progress;
 
@@ -41,6 +37,10 @@
 
         private Boolean isCompleted;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TrackableTask" /> class.
+        /// </summary>
+        /// <param name="name">The name of the trackable task.</param>
         public TrackableTask(String name)
         {
             this.Name = name;
@@ -49,18 +49,16 @@
             this.CancellationTokenSource = new CancellationTokenSource();
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event OnTaskCanceled OnCanceledEvent;
 
-        protected static ConcurrentDictionary<String, TrackableTask> uniqueTaskPool = new ConcurrentDictionary<String, TrackableTask>();
+        public event OnTaskCompleted OnCompletedEvent;
+
+        public event OnProgressUpdate OnProgressUpdatedEvent;
 
         /// <summary>
-        /// Indicates that a given property in this project item has changed.
+        /// An event that is raised when a property of this object changes.
         /// </summary>
-        /// <param name="propertyName">The name of the changed property.</param>
-        protected void RaisePropertyChanged(String propertyName)
-        {
-            this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public Single Progress
         {
@@ -150,7 +148,7 @@
 
                     if (this.TaskIdentifier != null)
                     {
-                        TrackableTask.uniqueTaskPool.TryRemove(this.TaskIdentifier, out _);
+                        TrackableTask.UniqueTaskPool.TryRemove(this.TaskIdentifier, out _);
                     }
 
                     this.isCompleted = value;
@@ -182,6 +180,15 @@
 
             this.IsCanceled = true;
         }
+
+        /// <summary>
+        /// Indicates that a given property in this project item has changed.
+        /// </summary>
+        /// <param name="propertyName">The name of the changed property.</param>
+        protected void RaisePropertyChanged(String propertyName)
+        {
+            this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 
     public class TrackableTask<T> : TrackableTask
@@ -189,6 +196,20 @@
         private TrackableTask(String name) : base(name)
         {
         }
+
+        public T Result
+        {
+            get
+            {
+                T result = this.Task.Result;
+
+                this.IsCompleted = true;
+
+                return result;
+            }
+        }
+
+        private Task<T> Task { get; set; }
 
         /// <summary>
         /// Creates an instance of a trackable task.
@@ -205,7 +226,7 @@
                 return TrackableTask<T>.Create(name, out progressUpdater, out cancellationToken);
             }
 
-            if (TrackableTask.uniqueTaskPool.ContainsKey(taskIdentifier))
+            if (TrackableTask.UniqueTaskPool.ContainsKey(taskIdentifier))
             {
                 throw new TaskConflictException();
             }
@@ -213,7 +234,7 @@
             TrackableTask<T> instance = TrackableTask<T>.Create(name, out progressUpdater, out cancellationToken);
             instance.TaskIdentifier = taskIdentifier;
 
-            if (!TrackableTask.uniqueTaskPool.TryAdd(taskIdentifier, instance))
+            if (!TrackableTask.UniqueTaskPool.TryAdd(taskIdentifier, instance))
             {
                 throw new TaskConflictException();
             }
@@ -245,24 +266,10 @@
             return this;
         }
 
-        public T Result
-        {
-            get
-            {
-                T result = this.Task.Result;
-
-                this.IsCompleted = true;
-
-                return result;
-            }
-        }
-
         private void UpdateProgressCallback(Single progress)
         {
             this.Progress = progress;
         }
-
-        private Task<T> Task { get; set; }
 
         private async void AwaitCompletion()
         {

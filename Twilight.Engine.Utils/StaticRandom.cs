@@ -30,15 +30,6 @@
         /// <summary>
         /// Returns a thread safe random integer.
         /// </summary>
-        /// <returns>A random integer.</returns>
-        public static Int32 Next(Int32 max)
-        {
-            return Random.Value.Next(max);
-        }
-
-        /// <summary>
-        /// Returns a thread safe random integer.
-        /// </summary>
         /// <param name="min">The inclusive lower bound of the number returned.</param>
         /// <param name="max">The exclusive upper bound of the number returned.</param>
         /// <returns>A random integer.</returns>

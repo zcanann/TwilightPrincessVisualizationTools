@@ -5,6 +5,8 @@
 
     public class TtlCache<V>
     {
+        protected static readonly Random Random = new Random();
+
         private ConcurrentDictionary<V, DateTime> cache;
 
         public TtlCache()
@@ -26,8 +28,6 @@
         protected TimeSpan DefaultTimeToLive { get; set; }
 
         protected TimeSpan RandomTimeToLiveOffset { get; set; }
-
-        protected static Random Random = new Random();
 
         public void Invalidate()
         {
@@ -212,16 +212,15 @@
             base.Add(value, timeToLive);
         }
 
-        public bool HasValue()
+        public Boolean HasValue()
         {
-            return base.Contains(cachedValue);
+            return this.Contains(cachedValue);
         }
 
         public V GetValue()
         {
             return cachedValue;
         }
-
     } //// End class
 }
 //// End namespace

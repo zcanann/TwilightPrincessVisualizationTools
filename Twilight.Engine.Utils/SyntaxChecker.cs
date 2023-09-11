@@ -1,10 +1,8 @@
 ﻿namespace Twilight.Engine.Common
 {
     using System;
-    using System.Collections;
     using System.Collections.Generic;
     using System.Globalization;
-    using System.Linq;
 
     /// <summary>
     /// A static class used to check syntax for various values and types.
@@ -16,7 +14,7 @@
         /// </summary>
         /// <param name="address">The address as a hex string.</param>
         /// <param name="mustBe32Bit">Whether or not the address must strictly be containable in 32 bits.</param>
-        /// <returns>A boolean indicating if the address is parseable.</returns>
+        /// <returns>A value indicating whether the address is parseable.</returns>
         public static Boolean CanParseAddress(String address, Boolean mustBe32Bit = false)
         {
             if (address == null)
@@ -51,7 +49,7 @@
         /// </summary>
         /// <param name="dataType">The type of the given value.</param>
         /// <param name="value">The value to be parsed.</param>
-        /// <returns>A boolean indicating if the value is parseable.</returns>
+        /// <returns>A value indicating whether the value is parseable.</returns>
         public static Boolean CanParseValue(ScannableType dataType, String value)
         {
             if (dataType == (ScannableType)null)
@@ -90,7 +88,7 @@
                 case ScannableType typeBE when typeBE == ScannableType.DoubleBE:
                     return SyntaxChecker.IsDouble(value);
                 case ByteArrayType _:
-                    return SyntaxChecker.IsArrayOfBytes(value);
+                    return SyntaxChecker.IsArrayOfBytes(value, false);
                 default:
                     return false;
             }
@@ -101,8 +99,9 @@
         /// </summary>
         /// <param name="dataType">The type of the given value.</param>
         /// <param name="value">The value to be parsed.</param>
-        /// <returns>A boolean indicating if the value is parseable as hex.</returns>
-        public static Boolean CanParseHex(ScannableType dataType, String value)
+        /// <param name="allowMasks">Whether hex values support masking operators (*, x, ?).</param>
+        /// <returns>A value indicating whether the value is parseable as hex.</returns>
+        public static Boolean CanParseHex(ScannableType dataType, String value, Boolean allowMasks = false)
         {
             if (value == null)
             {
@@ -119,6 +118,13 @@
             while (value.StartsWith("0") && value.Length > 1)
             {
                 value = value.Substring(1);
+            }
+
+            if (allowMasks)
+            {
+                value = value.Replace("*", "0");
+                value = value.Replace("x", "0");
+                value = value.Replace("?", "0");
             }
 
             // Remove negative sign from signed integer types, as TryParse methods do not handle negative hex values
@@ -173,192 +179,12 @@
         }
 
         /// <summary>
-        /// Determines if the given string can be parsed as a byte.
-        /// </summary>
-        /// <param name="value">The value as a string.</param>
-        /// <param name="isHex">Whether or not the value is encoded in hex.</param>
-        /// <returns>A boolean indicating if the value could be parsed.</returns>
-        private static Boolean IsByte(String value, Boolean isHex = false)
-        {
-            if (isHex)
-            {
-                return Byte.TryParse(value, NumberStyles.HexNumber, null, out _);
-            }
-            else
-            {
-                return Byte.TryParse(value, out _);
-            }
-        }
-
-        /// <summary>
-        /// Determines if the given string can be parsed as a signed byte.
-        /// </summary>
-        /// <param name="value">The value as a string.</param>
-        /// <param name="isHex">Whether or not the value is encoded in hex.</param>
-        /// <returns>A boolean indicating if the value could be parsed.</returns>
-        private static Boolean IsSByte(String value, Boolean isHex = false)
-        {
-            if (isHex)
-            {
-                return SByte.TryParse(value, NumberStyles.HexNumber, null, out _);
-            }
-            else
-            {
-                return SByte.TryParse(value, out _);
-            }
-        }
-
-        /// <summary>
-        /// Determines if the given string can be parsed as a 16 bit integer.
-        /// </summary>
-        /// <param name="value">The value as a string.</param>
-        /// <param name="isHex">Whether or not the value is encoded in hex.</param>
-        /// <returns>A boolean indicating if the value could be parsed.</returns>
-        private static Boolean IsInt16(String value, Boolean isHex = false)
-        {
-            if (isHex)
-            {
-                return Int16.TryParse(value, NumberStyles.HexNumber, null, out _);
-            }
-            else
-            {
-                return Int16.TryParse(value, out _);
-            }
-        }
-
-        /// <summary>
-        /// Determines if the given string can be parsed as a 16 bit signed integer.
-        /// </summary>
-        /// <param name="value">The value as a string.</param>
-        /// <param name="isHex">Whether or not the value is encoded in hex.</param>
-        /// <returns>A boolean indicating if the value could be parsed.</returns>
-        private static Boolean IsUInt16(String value, Boolean isHex = false)
-        {
-            if (isHex)
-            {
-                return UInt16.TryParse(value, NumberStyles.HexNumber, null, out _);
-            }
-            else
-            {
-                return UInt16.TryParse(value, out _);
-            }
-        }
-
-        /// <summary>
-        /// Determines if the given string can be parsed as a 32 bit integer.
-        /// </summary>
-        /// <param name="value">The value as a string.</param>
-        /// <param name="isHex">Whether or not the value is encoded in hex.</param>
-        /// <returns>A boolean indicating if the value could be parsed.</returns>
-        private static Boolean IsInt32(String value, Boolean isHex = false)
-        {
-            if (isHex)
-            {
-                return Int32.TryParse(value, NumberStyles.HexNumber, null, out _);
-            }
-            else
-            {
-                return Int32.TryParse(value, out _);
-            }
-        }
-
-        /// <summary>
-        /// Determines if the given string can be parsed as a 32 bit signed integer.
-        /// </summary>
-        /// <param name="value">The value as a string.</param>
-        /// <param name="isHex">Whether or not the value is encoded in hex.</param>
-        /// <returns>A boolean indicating if the value could be parsed.</returns>
-        private static Boolean IsUInt32(String value, Boolean isHex = false)
-        {
-            if (isHex)
-            {
-                return UInt32.TryParse(value, NumberStyles.HexNumber, null, out _);
-            }
-            else
-            {
-                return UInt32.TryParse(value, out _);
-            }
-        }
-
-        /// <summary>
-        /// Determines if the given string can be parsed as a 64 bit integer.
-        /// </summary>
-        /// <param name="value">The value as a string.</param>
-        /// <param name="isHex">Whether or not the value is encoded in hex.</param>
-        /// <returns>A boolean indicating if the value could be parsed.</returns>
-        private static Boolean IsInt64(String value, Boolean isHex = false)
-        {
-            if (isHex)
-            {
-                return Int64.TryParse(value, NumberStyles.HexNumber, null, out _);
-            }
-            else
-            {
-                return Int64.TryParse(value, out _);
-            }
-        }
-
-        /// <summary>
-        /// Determines if the given string can be parsed as a 64 bit signed integer.
-        /// </summary>
-        /// <param name="value">The value as a string.</param>
-        /// <param name="isHex">Whether or not the value is encoded in hex.</param>
-        /// <returns>A boolean indicating if the value could be parsed.</returns>
-        private static Boolean IsUInt64(String value, Boolean isHex = false)
-        {
-            if (isHex)
-            {
-                return UInt64.TryParse(value, NumberStyles.HexNumber, null, out _);
-            }
-            else
-            {
-                return UInt64.TryParse(value, out _);
-            }
-        }
-
-        /// <summary>
-        /// Determines if the given string can be parsed as a single precision floating point number.
-        /// </summary>
-        /// <param name="value">The value as a string.</param>
-        /// <param name="isHex">Whether or not the value is encoded in hex.</param>
-        /// <returns>A boolean indicating if the value could be parsed.</returns>
-        private static Boolean IsSingle(String value, Boolean isHex = false)
-        {
-            if (isHex && IsUInt32(value, isHex))
-            {
-                return Single.TryParse(Conversions.ParseHexStringAsPrimitiveString(ScannableType.Single, value), out _);
-            }
-            else
-            {
-                return Single.TryParse(value.EndsWith("f") ? value.Remove(value.LastIndexOf("f")) : value, out _);
-            }
-        }
-
-        /// <summary>
-        /// Determines if the given string can be parsed as a double precision floating point number.
-        /// </summary>
-        /// <param name="value">The value as a string.</param>
-        /// <param name="isHex">Whether or not the value is encoded in hex.</param>
-        /// <returns>A boolean indicating if the value could be parsed.</returns>
-        private static Boolean IsDouble(String value, Boolean isHex = false)
-        {
-            if (isHex && IsUInt64(value, isHex))
-            {
-                return Double.TryParse(Conversions.ParseHexStringAsPrimitiveString(ScannableType.Double, value), out _);
-            }
-            else
-            {
-                return Double.TryParse(value, out _);
-            }
-        }
-
-        /// <summary>
         /// Determines if the given string can be parsed as an array of bytes.
         /// </summary>
         /// <param name="value">The value as a string.</param>
         /// <param name="isHex">Whether or not the value is encoded in hex.</param>
-        /// <returns>A boolean indicating if the value could be parsed.</returns>
-        private static Boolean IsArrayOfBytes(String value, Boolean isHex = false)
+        /// <returns>A value indicating whether the value could be parsed.</returns>
+        public static Boolean IsArrayOfBytes(String value, Boolean isHex = false)
         {
             IEnumerable<String> byteStrings = Conversions.SplitByteArrayString(value, isHex);
 
@@ -371,6 +197,186 @@
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Determines if the given string can be parsed as a byte.
+        /// </summary>
+        /// <param name="value">The value as a string.</param>
+        /// <param name="isHex">Whether or not the value is encoded in hex.</param>
+        /// <returns>A value indicating whether the value could be parsed.</returns>
+        private static Boolean IsByte(String value, Boolean isHex = false)
+        {
+            if (isHex)
+            {
+                return Byte.TryParse(value, NumberStyles.HexNumber, null, out _);
+            }
+            else
+            {
+                return value != null && Byte.TryParse(value, out _);
+            }
+        }
+
+        /// <summary>
+        /// Determines if the given string can be parsed as a signed byte.
+        /// </summary>
+        /// <param name="value">The value as a string.</param>
+        /// <param name="isHex">Whether or not the value is encoded in hex.</param>
+        /// <returns>A value indicating whether the value could be parsed.</returns>
+        private static Boolean IsSByte(String value, Boolean isHex = false)
+        {
+            if (isHex)
+            {
+                return SByte.TryParse(value, NumberStyles.HexNumber, null, out _);
+            }
+            else
+            {
+                return value != null && SByte.TryParse(value, out _);
+            }
+        }
+
+        /// <summary>
+        /// Determines if the given string can be parsed as a 16 bit integer.
+        /// </summary>
+        /// <param name="value">The value as a string.</param>
+        /// <param name="isHex">Whether or not the value is encoded in hex.</param>
+        /// <returns>A value indicating whether the value could be parsed.</returns>
+        private static Boolean IsInt16(String value, Boolean isHex = false)
+        {
+            if (isHex)
+            {
+                return Int16.TryParse(value, NumberStyles.HexNumber, null, out _);
+            }
+            else
+            {
+                return value != null && Int16.TryParse(value, out _);
+            }
+        }
+
+        /// <summary>
+        /// Determines if the given string can be parsed as a 16 bit signed integer.
+        /// </summary>
+        /// <param name="value">The value as a string.</param>
+        /// <param name="isHex">Whether or not the value is encoded in hex.</param>
+        /// <returns>A value indicating whether the value could be parsed.</returns>
+        private static Boolean IsUInt16(String value, Boolean isHex = false)
+        {
+            if (isHex)
+            {
+                return UInt16.TryParse(value, NumberStyles.HexNumber, null, out _);
+            }
+            else
+            {
+                return value != null && UInt16.TryParse(value, out _);
+            }
+        }
+
+        /// <summary>
+        /// Determines if the given string can be parsed as a 32 bit integer.
+        /// </summary>
+        /// <param name="value">The value as a string.</param>
+        /// <param name="isHex">Whether or not the value is encoded in hex.</param>
+        /// <returns>A value indicating whether the value could be parsed.</returns>
+        private static Boolean IsInt32(String value, Boolean isHex = false)
+        {
+            if (isHex)
+            {
+                return Int32.TryParse(value, NumberStyles.HexNumber, null, out _);
+            }
+            else
+            {
+                return value != null && Int32.TryParse(value, out _);
+            }
+        }
+
+        /// <summary>
+        /// Determines if the given string can be parsed as a 32 bit signed integer.
+        /// </summary>
+        /// <param name="value">The value as a string.</param>
+        /// <param name="isHex">Whether or not the value is encoded in hex.</param>
+        /// <returns>A value indicating whether the value could be parsed.</returns>
+        private static Boolean IsUInt32(String value, Boolean isHex = false)
+        {
+            if (isHex)
+            {
+                return UInt32.TryParse(value, NumberStyles.HexNumber, null, out _);
+            }
+            else
+            {
+                return value != null && UInt32.TryParse(value, out _);
+            }
+        }
+
+        /// <summary>
+        /// Determines if the given string can be parsed as a 64 bit integer.
+        /// </summary>
+        /// <param name="value">The value as a string.</param>
+        /// <param name="isHex">Whether or not the value is encoded in hex.</param>
+        /// <returns>A value indicating whether the value could be parsed.</returns>
+        private static Boolean IsInt64(String value, Boolean isHex = false)
+        {
+            if (isHex)
+            {
+                return Int64.TryParse(value, NumberStyles.HexNumber, null, out _);
+            }
+            else
+            {
+                return value != null && Int64.TryParse(value, out _);
+            }
+        }
+
+        /// <summary>
+        /// Determines if the given string can be parsed as a 64 bit signed integer.
+        /// </summary>
+        /// <param name="value">The value as a string.</param>
+        /// <param name="isHex">Whether or not the value is encoded in hex.</param>
+        /// <returns>A value indicating whether the value could be parsed.</returns>
+        private static Boolean IsUInt64(String value, Boolean isHex = false)
+        {
+            if (isHex)
+            {
+                return UInt64.TryParse(value, NumberStyles.HexNumber, null, out _);
+            }
+            else
+            {
+                return value != null && UInt64.TryParse(value, out _);
+            }
+        }
+
+        /// <summary>
+        /// Determines if the given string can be parsed as a single precision floating point number.
+        /// </summary>
+        /// <param name="value">The value as a string.</param>
+        /// <param name="isHex">Whether or not the value is encoded in hex.</param>
+        /// <returns>A value indicating whether the value could be parsed.</returns>
+        private static Boolean IsSingle(String value, Boolean isHex = false)
+        {
+            if (isHex && IsUInt32(value, isHex))
+            {
+                return Single.TryParse(Conversions.ParseHexStringAsPrimitiveString(ScannableType.Single, value), out _);
+            }
+            else
+            {
+                return value != null && Single.TryParse(value.EndsWith("f") ? value.Remove(value.LastIndexOf("f")) : value, out _);
+            }
+        }
+
+        /// <summary>
+        /// Determines if the given string can be parsed as a double precision floating point number.
+        /// </summary>
+        /// <param name="value">The value as a string.</param>
+        /// <param name="isHex">Whether or not the value is encoded in hex.</param>
+        /// <returns>A value indicating whether the value could be parsed.</returns>
+        private static Boolean IsDouble(String value, Boolean isHex = false)
+        {
+            if (isHex && IsUInt64(value, isHex))
+            {
+                return Double.TryParse(Conversions.ParseHexStringAsPrimitiveString(ScannableType.Double, value), out _);
+            }
+            else
+            {
+                return value != null && Double.TryParse(value, out _);
+            }
         }
     }
     //// End class

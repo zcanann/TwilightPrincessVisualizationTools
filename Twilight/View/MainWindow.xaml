@@ -263,8 +263,6 @@
                         </shell:DataTemplate>
                     </shell:ComboBox.ItemTemplate>
                 </shell:ComboBox>
-                <shell:CheckBox Margin="4 0 0 0" Background="{StaticResource TwilightColorWhite}" Foreground="{StaticResource TwilightColorWhite}" VerticalAlignment="Center" Content="Wii"
-                                IsChecked="{Binding MainViewModel.IsWii, Source={StaticResource ViewModelLocator}, Mode=TwoWay}"/>
             </shell:WrapPanel>
 
             <!--  Docking Panel  -->

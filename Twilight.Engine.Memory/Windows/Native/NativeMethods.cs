@@ -86,7 +86,7 @@
         public static extern Boolean ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, [Out] Byte[] lpBuffer, Int32 dwSize, out Int32 lpNumberOfBytesRead);
 
         [DllImport("kernel32.dll")]
-        static extern Boolean VirtualProtectEx(IntPtr hProcess, IntPtr lpAddress, UIntPtr dwSize, UInt32 flNewProtect, out UInt32 lpflOldProtect);
+        public static extern Boolean VirtualProtectEx(IntPtr hProcess, IntPtr lpAddress, UIntPtr dwSize, UInt32 flNewProtect, out UInt32 lpflOldProtect);
 
         /// <summary>
         /// Reserves or commits a region of memory within the virtual address space of a specified process. The function initializes the memory it allocates to zero, unless MEM_RESET is used.
@@ -228,7 +228,7 @@
 
         [DllImport("psapi.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool QueryWorkingSetEx(IntPtr hProcess, [In, Out] MemoryWorkingSetExInformation[] pv, int cb);
+        public static extern Boolean QueryWorkingSetEx(IntPtr hProcess, [In, Out] MemoryWorkingSetExInformation[] pv, Int32 cb);
 
         /// <summary>
         /// Writes data to an area of memory in a specified process. The entire area to be written to must be accessible or the operation fails.

@@ -7,6 +7,7 @@
     using System.Globalization;
     using System.Linq;
     using System.Runtime.InteropServices;
+    using System.Text.RegularExpressions;
 
     /// <summary>
     /// Collection of methods to convert values from one format to another format.
@@ -131,7 +132,7 @@
                 case ScannableType typeBE when typeBE == ScannableType.DoubleBE:
                     return BitConverter.ToUInt64(BitConverter.GetBytes((Double)realValue), 0).ToString("X");
                 case ScannableType type when type == ScannableType.String:
-                    return String.Join(' ', Conversions.ParseByteArrayString(value).Select(str => Conversions.ParsePrimitiveStringAsHexString(ScannableType.Byte, str.ToString(), signHex)));
+                    return String.Join(' ', Conversions.ParseByteArrayString(value, true, true).Select(str => Conversions.ParsePrimitiveStringAsHexString(ScannableType.Byte, str.ToString(), signHex)));
                 case ScannableType type when type == ScannableType.IntPtr:
                     return ((IntPtr)realValue).ToString("X");
                 case ScannableType type when type == ScannableType.UIntPtr:
@@ -205,8 +206,8 @@
                 case ScannableType type when type == ScannableType.Double:
                 case ScannableType typeBE when typeBE == ScannableType.DoubleBE:
                     return BitConverter.ToDouble(BitConverter.GetBytes(realValue), 0).ToString();
-                case ByteArrayType _:
-                    return String.Join(' ', Conversions.ParseByteArrayString(value).Select(x => x.ToString()));
+                case ByteArrayType type:
+                    return String.Join(' ', Conversions.ParseByteArrayString(value, true, true).Select(x => x.ToString()));
                 case ScannableType type when type == ScannableType.IntPtr:
                     return ((IntPtr)realValue).ToString();
                 case ScannableType type when type == ScannableType.UIntPtr:
@@ -452,26 +453,76 @@
             }
         }
 
-        public static Byte[] ParseByteArrayString(String value, bool isHex = true)
+        /// <summary>
+        /// Parses a string representation of an array of bytes into an actual byte array.
+        /// </summary>
+        /// <param name="value">The array of bytes string representation.</param>
+        /// <param name="isHex">A value indicating whether the array of bytes string has hex values.</param>
+        /// <param name="filterMasks">A value indicating whether mask values (?, *, x) should be replaced with a value of 0.</param>
+        /// <returns></returns>
+        public static Byte[] ParseByteArrayString(String value, Boolean isHex = true, Boolean filterMasks = false)
         {
-            IEnumerable<String> byteStrings = SplitByteArrayString(value, isHex);
+            if (isHex && filterMasks)
+            {
+                Regex wildcardRegex = new Regex("[?*x]");
+                value = wildcardRegex.Replace(value, "0");
+            }
 
-            return byteStrings.Select(str => Byte.Parse(str, isHex ? NumberStyles.HexNumber : NumberStyles.Integer)).ToArray();
+            IEnumerable<String> byteStrings = SplitByteArrayString(value, isHex);
+            Byte[] result = byteStrings.Select(str => Byte.Parse(str, isHex ? NumberStyles.HexNumber : NumberStyles.Integer)).ToArray();
+
+            return result;
         }
 
-        public static IEnumerable<String> SplitByteArrayString(String value, bool isHex = true)
+        /// <summary>
+        /// Creates a byte array mask from the given array of bytes hex string. All ?, *, and x characters will be mapped to the byte 0xF, and all others are mapped to 0x0.
+        /// </summary>
+        /// <param name="value">An array of bytes hex string.</param>
+        /// <returns>The array of bytes wildcard mask.</returns>
+        public static Byte[] ParseByteArrayWildcardMask(String value)
+        {
+            Regex hexRegex = new Regex("[a-fA-F0-9]");
+            Regex wildcardRegex = new Regex("[?*x]");
+            value = hexRegex.Replace(value, "0");
+            value = wildcardRegex.Replace(value, "F");
+
+            IEnumerable<String> byteStrings = SplitByteArrayString(value, true);
+            Byte[] result = byteStrings.Select(str => Byte.Parse(str, NumberStyles.HexNumber)).ToArray();
+
+            return result;
+        }
+
+        /// <summary>
+        /// Partitions an array of bytes string into an enumerable collection of strings, each of which contains a string representation of a single byte.
+        /// </summary>
+        /// <param name="value">The array of byte string to parse.</param>
+        /// <param name="isHex">A value indicating whether the elements of the provided array are represented in hex.</param>
+        /// <returns>An enumerable collection of strings, each of which contains a string representation of a single byte.</returns>
+        public static IEnumerable<String> SplitByteArrayString(String value, Boolean isHex = true)
         {
             // First split on whitespace, which has priority for separating bytes
-            String[] values = value?.Split(' ') ?? new String[0];
+            String[] values = value?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? new String[0];
 
-            // Next group bytes into chunks of two (or three, for dec), from left to right
-            Int32 index = 0;
-            return values.Select(str => str
-                .ToLookup(character => index++ / (isHex ? 2 : 3))
-                .Select(lookup => new String(lookup.ToArray())))
-                    .SelectMany(str => str);
+            // Next group bytes into chunks of two from left to right
+            if (isHex)
+            {
+                Int32 index = 0;
+                return values.Select(str => str
+                    .ToLookup(character => index++ / 2)
+                    .Select(lookup => new String(lookup.ToArray())))
+                        .SelectMany(str => str);
+            }
+            else
+            {
+                return values;
+            }
         }
 
+        /// <summary>
+        /// Converts a given value into a metric information storage size (ie KB, MB, GB, TB, etc.)
+        /// </summary>
+        /// <param name="value">A value representing the number of bytes.</param>
+        /// <returns>The value as its corresponding metric size string.</returns>
         public static String ValueToMetricSize(UInt64 value)
         {
             // Note: UInt64s run out around EB

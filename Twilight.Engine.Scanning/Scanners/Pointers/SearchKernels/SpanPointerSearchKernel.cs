@@ -1,7 +1,8 @@
 ﻿namespace Twilight.Engine.Scanning.Scanners.Pointers.SearchKernels
 {
     using Twilight.Engine.Common.Extensions;
-    using Twilight.Engine.Common.OS;
+    using Twilight.Engine.Common.Hardware;
+    using Twilight.Engine.Scanning.Scanners.Comparers.Vectorized;
     using Twilight.Engine.Scanning.Scanners.Pointers.Structures;
     using Twilight.Engine.Scanning.Snapshots;
     using System;
@@ -9,9 +10,9 @@
     using System.Linq;
     using System.Numerics;
 
-    internal class SpanSearchKernel : IVectorSearchKernel
+    internal class SpanPointerSearchKernel : IVectorPointerSearchKernel
     {
-        public SpanSearchKernel(Snapshot boundsSnapshot, UInt32 maxOffset, PointerSize pointerSize)
+        public SpanPointerSearchKernel(Snapshot boundsSnapshot, UInt32 maxOffset, PointerSize pointerSize)
         {
             this.BoundsSnapshot = boundsSnapshot;
             this.MaxOffset = maxOffset;
@@ -37,15 +38,15 @@
 
         private UInt32[] UArray { get; set; }
 
-        private Comparer<UInt32> Comparer;
+        private Comparer<UInt32> Comparer { get; set; }
 
-        public Func<Vector<Byte>> GetSearchKernel(SnapshotElementVectorComparer snapshotElementVectorComparer)
+        public Func<Vector<Byte>> GetSearchKernel(SnapshotRegionVectorScannerBase snapshotRegionScanner)
         {
             return new Func<Vector<Byte>>(() =>
             {
                 Span<UInt32> lowerBounds = this.LowerBounds;
                 Span<UInt32> upperBounds = this.UpperBounds;
-                Vector<UInt32> currentValues = Vector.AsVectorUInt32(snapshotElementVectorComparer.CurrentValues);
+                Vector<UInt32> currentValues = Vector.AsVectorUInt32(snapshotRegionScanner.CurrentValues);
 
                 for (Int32 index = 0; index < Vectors.VectorSize / sizeof(UInt32); index++)
                 {

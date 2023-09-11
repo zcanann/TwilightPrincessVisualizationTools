@@ -37,6 +37,15 @@
         /// <returns>The array of bytes read from memory, if the read succeeded.</returns>
         Byte[] ReadBytes(Process process, UInt64 address, Int32 count, out Boolean success);
 
+        /// <summary>
+        /// Reads an array of bytes from the opened processes memory.
+        /// </summary>
+        /// <param name="address">The address to read from.</param>
+        /// <param name="count">The number of bytes to read.</param>
+        /// <param name="success">Whether or not the read succeeded.</param>
+        /// <returns>The array of bytes read from memory, if the read succeeded.</returns>
+        void ReadBytes(Process process, Byte[] preallocated, UInt64 address, out Boolean success);
+
         UInt64 EvaluatePointer(Process process, UInt64 address, IEnumerable<Int32> offsets);
     }
     //// End interface

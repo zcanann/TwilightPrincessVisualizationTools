@@ -1,7 +1,8 @@
 ﻿namespace Twilight.Engine.Scanning.Scanners.Pointers.SearchKernels
 {
     using Twilight.Engine.Common.Extensions;
-    using Twilight.Engine.Common.OS;
+    using Twilight.Engine.Common.Hardware;
+    using Twilight.Engine.Scanning.Scanners.Comparers.Vectorized;
     using Twilight.Engine.Scanning.Scanners.Pointers.Structures;
     using Twilight.Engine.Scanning.Snapshots;
     using System;
@@ -9,14 +10,14 @@
     using System.Linq;
     using System.Numerics;
 
-    internal class BinarySearchKernel : IVectorSearchKernel
+    internal class BinaryPointerSearchKernel : IVectorPointerSearchKernel
     {
-        public BinarySearchKernel(Snapshot boundsSnapshot, UInt32 maxOffset, PointerSize pointerSize)
+        public BinaryPointerSearchKernel(Snapshot boundsSnapshot, UInt32 maxOffset, PointerSize pointerSize)
         {
             this.BoundsSnapshot = boundsSnapshot;
             this.MaxOffset = maxOffset;
 
-            this.PowerOf2Padding = this.Log2((UInt32)this.BoundsSnapshot.SnapshotRegions.Length) << 1;
+            this.PowerOf2Padding = this.Log2((UInt32)this.BoundsSnapshot.SnapshotRegions.Count()) << 1;
 
             this.LowerBounds = this.GetLowerBounds();
             this.UpperBounds = this.GetUpperBounds();
@@ -39,12 +40,12 @@
 
         private UInt32 PowerOf2Padding { get; set; }
 
-        public Func<Vector<Byte>> GetSearchKernel(SnapshotElementVectorComparer snapshotElementVectorComparer)
+        public Func<Vector<Byte>> GetSearchKernel(SnapshotRegionVectorScannerBase snapshotRegionScanner)
         {
             return new Func<Vector<Byte>>(() =>
             {
                 UInt32 halfIndex = this.PowerOf2Padding >> 1;
-                Vector<UInt32> currentValues = Vector.AsVectorUInt32(snapshotElementVectorComparer.CurrentValues);
+                Vector<UInt32> currentValues = Vector.AsVectorUInt32(snapshotRegionScanner.CurrentValues);
                 Vector<UInt32> discoveredIndicies = Vector.ConditionalSelect(Vector.GreaterThan(currentValues, new Vector<UInt32>(this.UpperBounds[halfIndex])), new Vector<UInt32>(halfIndex), Vector<UInt32>.Zero);
 
                 while (halfIndex > 1)
@@ -73,7 +74,7 @@
         {
             IEnumerable<UInt32> lowerBounds = this.BoundsSnapshot.SnapshotRegions.Select(region => unchecked((UInt32)region.BaseAddress.Subtract(this.MaxOffset, wrapAround: false)));
 
-            while (lowerBounds.Count() < PowerOf2Padding)
+            while (lowerBounds.Count() < this.PowerOf2Padding)
             {
                 lowerBounds = lowerBounds.Append<UInt32>(UInt32.MinValue);
             }
@@ -85,7 +86,7 @@
         {
             IEnumerable<UInt32> upperBounds = this.BoundsSnapshot.SnapshotRegions.Select(region => unchecked((UInt32)region.EndAddress.Add(this.MaxOffset, wrapAround: false)));
 
-            while (upperBounds.Count() < PowerOf2Padding)
+            while (upperBounds.Count() < this.PowerOf2Padding)
             {
                 upperBounds = upperBounds.Append<UInt32>(UInt32.MaxValue);
             }

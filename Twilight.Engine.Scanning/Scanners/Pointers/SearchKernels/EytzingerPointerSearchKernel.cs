@@ -1,24 +1,28 @@
 ﻿namespace Twilight.Engine.Scanning.Scanners.Pointers.SearchKernels
 {
+    using Twilight.Engine.Common.DataStructures;
     using Twilight.Engine.Common.Extensions;
-    using Twilight.Engine.Common.OS;
+    using Twilight.Engine.Common.Hardware;
+    using Twilight.Engine.Scanning.Scanners.Comparers.Vectorized;
     using Twilight.Engine.Scanning.Scanners.Pointers.Structures;
     using Twilight.Engine.Scanning.Snapshots;
     using System;
     using System.Linq;
     using System.Numerics;
 
-    internal class EytzingerSearchKernel : IVectorSearchKernel
+    internal class EytzingerPointerSearchKernel : IVectorPointerSearchKernel
     {
-        public EytzingerSearchKernel(Snapshot boundsSnapshot, UInt32 maxOffset, PointerSize pointerSize)
+        private Vector<UInt32> Two = new Vector<UInt32>(2);
+
+        public EytzingerPointerSearchKernel(Snapshot boundsSnapshot, UInt32 maxOffset, PointerSize pointerSize)
         {
             this.BoundsSnapshot = boundsSnapshot;
             this.MaxOffset = maxOffset;
 
-            this.L = 1 + this.Log2(2 + this.BoundsSnapshot.SnapshotRegions.Length + 1); // Final +1 due to inversion
+            this.L = 1 + this.Log2(2 + this.BoundsSnapshot.SnapshotRegions.Count() + 1); // Final +1 due to inversion
             this.M = new Vector<UInt32>(unchecked((UInt32)(~(2 * this.L))));
 
-            this.Length = 2 << (this.L + 2) - 1;
+            this.Length = (2 << (this.L + 2)) - 1;
 
             this.LowerBounds = this.GetInverseLowerBounds();
             this.UpperBounds = this.GetInverseUpperBounds();
@@ -48,15 +52,13 @@
 
         private Vector<UInt32> M { get; set; }
 
-        private Vector<UInt32> Two = new Vector<UInt32>(2);
-
-        public Func<Vector<Byte>> GetSearchKernel(SnapshotElementVectorComparer snapshotElementVectorComparer)
+        public Func<Vector<Byte>> GetSearchKernel(SnapshotRegionVectorScannerBase snapshotRegionScanner)
         {
             return new Func<Vector<Byte>>(() =>
             {
-                Vector<UInt32> z = Vector.AsVectorUInt32(snapshotElementVectorComparer.CurrentValues);
+                Vector<UInt32> z = Vector.AsVectorUInt32(snapshotRegionScanner.CurrentValues);
                 Vector<UInt32> heapRoot = new Vector<UInt32>(this.LowerBounds[0]);
-                Vector<UInt32> P = Vector.ConditionalSelect(Vector.GreaterThanOrEqual(z, heapRoot), this.Two, Vector<UInt32>.One);
+                Vector<UInt32> P = Vector.ConditionalSelect(Vector.GreaterThanOrEqual(z, heapRoot), this.Two, Vector.AsVectorUInt32(Vectors.AllBits));
                 Int32 l = this.L;
 
                 while (l > 1)
@@ -67,7 +69,7 @@
                     }
 
                     Vector<UInt32> YP = new Vector<UInt32>(this.YArray);
-                    Vector<UInt32> Q = Vector.ConditionalSelect(Vector.GreaterThanOrEqual(z, YP), this.Two, Vector<UInt32>.One);
+                    Vector<UInt32> Q = Vector.ConditionalSelect(Vector.GreaterThanOrEqual(z, YP), this.Two, Vector.AsVectorUInt32(Vectors.AllBits));
 
                     P = Vector.Add(Vector.Multiply(P, this.Two), Q);
                     l--;

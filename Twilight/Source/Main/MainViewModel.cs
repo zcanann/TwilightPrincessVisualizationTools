@@ -2,18 +2,34 @@
 {
     using System;
     using System.Numerics;
+    using System.Text;
     using System.Threading;
+    using System.Threading.Tasks;
     using System.Windows;
+    using Twilight.Engine.Common;
+    using Twilight.Engine.Common.Hardware;
     using Twilight.Engine.Common.Logging;
     using Twilight.Engine.Common.OS;
+    using Twilight.Engine.Memory;
     using Twilight.Source.Docking;
     using Twilight.Source.Output;
+
+    public enum EDetectedVersion
+    {
+        None,
+        GC_En,
+        GC_Jp,
+        GC_Pal,
+        Wii_En_1_0,
+        Wii_En_1_2,
+    };
 
     /// <summary>
     /// Main view model.
     /// </summary>
     public class MainViewModel : WindowHostViewModel
     {
+
         /// <summary>
         /// Singleton instance of the <see cref="MainViewModel" /> class
         /// </summary>
@@ -35,7 +51,17 @@
             }
 
             Logger.Log(LogLevel.Info, "Twilight Princess Visualization Tools started");
+
+            Application.Current.Exit += this.OnAppExit;
+            this.RunUpdateLoop();
         }
+
+        private void OnAppExit(object sender, ExitEventArgs e)
+        {
+            this.CanUpdate = false;
+        }
+
+        public EDetectedVersion DetectedVersion { get; private set; }
 
         /// <summary>
         /// Default layout file for browsing cheats.
@@ -48,20 +74,92 @@
         protected override String LayoutSaveFile { get { return "Layout.xml"; } }
 
         /// <summary>
-        /// Gets or sets the target platform.
+        /// Gets or sets a value indicating whether the update loop can run.
         /// </summary>
-        public Boolean IsWii
-        {
-            get
-            {
-                return Properties.Settings.Default.IsWii;
-            }
+        private bool CanUpdate { get; set; }
 
-            set
+        /// <summary>
+        /// Begin the update loop for visualizing the heap.
+        /// </summary>
+        private void RunUpdateLoop()
+        {
+            this.CanUpdate = true;
+
+            Task.Run(async () =>
             {
-                Properties.Settings.Default.IsWii = value;
-                Properties.Settings.Default.Save();
-                this.RaisePropertyChanged(nameof(this.IsWii));
+                while (this.CanUpdate)
+                {
+                    try
+                    {
+                        if (SessionManager.Session.OpenedProcess != null)
+                        {
+                            Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                this.DetectVersion();
+                            });
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Log(LogLevel.Error, "Error updating the Heap Visualizer", ex);
+                    }
+
+                    await Task.Delay(2500);
+                }
+            });
+        }
+
+
+        private Byte[] GameCode = new Byte[6];
+
+        private void DetectVersion()
+        {
+            UInt64 gameCodeAddress = MemoryQueryer.Instance.ResolveModule(SessionManager.Session.OpenedProcess, "GC", EmulatorType.Dolphin);
+
+            Boolean success;
+            MemoryReader.Instance.ReadBytes(
+                SessionManager.Session.OpenedProcess,
+                this.GameCode,
+                gameCodeAddress,
+                out success);
+
+            if (success)
+            {
+                const String GcVersionEn = "GZ2E01";
+                const String GcVersionJp = "GZ2J01";
+                const String GcVersionPal = "GZ2P01";
+                const String GcVersionWii1 = "RZDE01";
+
+                String gbaGcVersion = Encoding.ASCII.GetString(this.GameCode);
+
+                EDetectedVersion detectedVersion = EDetectedVersion.None;
+
+                if (gbaGcVersion == GcVersionEn)
+                {
+                    detectedVersion = EDetectedVersion.GC_En;
+                }
+                else if (gbaGcVersion == GcVersionJp)
+                {
+                    detectedVersion = EDetectedVersion.GC_Jp;
+                }
+                else if (gbaGcVersion == GcVersionPal)
+                {
+                    detectedVersion = EDetectedVersion.GC_Pal;
+                }
+                else if (gbaGcVersion == GcVersionWii1)
+                {
+                    detectedVersion = EDetectedVersion.Wii_En_1_2;
+                }
+
+                if (this.DetectedVersion != detectedVersion)
+                {
+                    this.DetectedVersion = detectedVersion;
+                    // this.RefreshAllViews();
+                }
+            }
+            else
+            {
+                this.DetectedVersion = EDetectedVersion.None;
             }
         }
 
